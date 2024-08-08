@@ -1,0 +1,34 @@
+{
+  "name": "rec_liga",
+  "version": "0.0.1",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "@dtone/dvs": "^1.1.0",
+    "@sendgrid/mail": "^7.6.0",
+    "axios": "^0.24.0",
+    "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "express": "4.17.1",
+    "fcm-node": "^1.6.1",
+    "firebase-admin": "^10.3.0",
+    "fs": "^0.0.1-security",
+    "fs-promise": "^2.0.3",
+    "lodash": "^4.17.21",
+    "md5": "^2.3.0",
+    "moment": "^2.29.4",
+    "moment-timezone": "^0.5.45",
+    "multer": "^1.4.3",
+    "mysql2": "^2.3.3-rc.0",
+    "nodemailer": "^6.9.6",
+    "request": "^2.88.2",
+    "sequelize": "^6.9.0",
+    "socket.io": "^4.4.1",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.18"
+  }
+}
