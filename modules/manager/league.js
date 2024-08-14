@@ -15,8 +15,19 @@ let CreateLeague = async (body, req, res) => {
     }
 
     // Validate sport_id
-    if (!sport_id || !mongoose.Types.ObjectId.isValid(sport_id)) {
+    if (!sport_id) {
       return apiResponse.onSuccess(res, "Please provide a valid sport id.", 400, false);
+    }
+
+    let selected_sports = []
+    if(sport_id && sport_id.length > 0) {
+      sport_id.forEach(x => {
+        if(!mongoose.Types.ObjectId.isValid(x)) {
+          return apiResponse.onSuccess(res, "Please provide a valid sport id.", 400, false);
+        }
+      })
+      
+      selected_sports = sport_id.map(x => new mongoose.Types.ObjectId(x))
     }
 
     // Check if sport exists
@@ -58,7 +69,7 @@ let CreateLeague = async (body, req, res) => {
     let createLeagueData = {
       name: name,
       organizer_id: null,  // Set this to the appropriate value
-      sport_id: new mongoose.Types.ObjectId(sport_id),
+      sport_id: selected_sports,
       join_privacy: join_privacy,
       statistics_info: statistics_info,
     };
