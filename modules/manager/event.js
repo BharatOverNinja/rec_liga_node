@@ -2,6 +2,7 @@
 
 let LeagueModel = require("../models/league"),
   EventModel = require("../models/event"),
+  SportModel = require("../models/sports"),
   apiResponse = require("../helpers/apiResponse");
 const mongoose = require('mongoose');
 
@@ -87,6 +88,33 @@ let CreateEvent = async (body, req, res) => {
     return apiResponse.onError(res, "An error occurred while creating the event.", 500, false);
   }
 };
+
+let SportsList = async (body, req, res) => {
+  try {
+    const { league_id } = body;
+
+    // Validate league_id
+    if (!league_id || !mongoose.Types.ObjectId.isValid(league_id)) {
+      return apiResponse.onSuccess(res, "Please provide a valid league id.", 400, false);
+    }
+
+    // Check if sport exists
+    const league = await LeagueModel.findById(league_id);
+    if (!league) {
+      return apiResponse.onSuccess(res, "Selected league not found.", 400, false);
+    }
+
+    let sport_id = league.sport_id.map(x => new mongoose.Types.ObjectId(x))
+    
+    let sports_list = await SportModel.find({_id : sport_id})
+
+    return apiResponse.onSuccess(res, "Sports list fetched successfully.", 200, true, sports_list);
+  } catch (err) {
+    console.log("err ", err);
+    return apiResponse.onError(res, "An error occurred while fetching sports list.", 500, false);
+  }
+};
 module.exports = {
-  CreateEvent:CreateEvent
+  CreateEvent:CreateEvent,
+  SportsList: SportsList
 };

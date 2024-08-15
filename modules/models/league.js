@@ -8,6 +8,7 @@ const schemaDefinition = new Schema(
     organizer_id: { type: mongoose.Schema.Types.ObjectId },
     join_privacy : { type: Number }, // 1 : Public, 2 : Private
     statistics_info: { type: Array },
+    image : { type: String }
   },
   { versionKey: false, collection: "leagues", timestamps: true }
 );

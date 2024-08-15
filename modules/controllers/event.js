@@ -5,6 +5,12 @@ let CreateEvent = (req, res, next) => {
     .CreateEvent(req.body, req, res);
 }
 
+let SportsList = (req, res, next) => {
+  return eventManager
+    .SportsList(req.body, req, res);
+}
+
 module.exports = {
-  CreateEvent: CreateEvent
+  CreateEvent: CreateEvent,
+  SportsList: SportsList
 };
