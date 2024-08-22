@@ -5,8 +5,10 @@ const schemaDefinition = new Schema(
   {
     name: { type: String },
     email: { type: String },
-    role: { type: String }, // league_organizer, player
-    image: { type: String }
+    phone: { type: String },
+    role: { type: String, enum: ["Player", "League Organizer"] }, // league_organizer, player
+    image: { type: String },
+    date: { type: Date, default: Date.now },
   },
   { versionKey: false, collection: "users", timestamps: true }
 );
