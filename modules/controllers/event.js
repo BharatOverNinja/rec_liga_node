@@ -10,7 +10,13 @@ let SportsList = (req, res, next) => {
     .SportsList(req.body, req, res);
 }
 
+let ChooseCaptain = (req, res, next) => {
+  return eventManager
+    .ChooseCaptain(req.body, req, res);
+}
+
 module.exports = {
   CreateEvent: CreateEvent,
-  SportsList: SportsList
+  SportsList: SportsList,
+  ChooseCaptain: ChooseCaptain
 };

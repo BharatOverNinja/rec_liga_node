@@ -2,6 +2,8 @@
 
 let LeagueModel = require("../models/league"),
   EventModel = require("../models/event"),
+  CaptainModel = require("../models/captain"),
+  UserModel = require("../models/user"),
   SportModel = require("../models/sports"),
   apiResponse = require("../helpers/apiResponse");
 const mongoose = require('mongoose');
@@ -114,7 +116,60 @@ let SportsList = async (body, req, res) => {
     return apiResponse.onError(res, "An error occurred while fetching sports list.", 500, false);
   }
 };
+
+let ChooseCaptain = async (body, req, res) => {
+  try {
+    const { event_id, user_id } = body;
+
+    // Validate event_id
+    if (!event_id || !mongoose.Types.ObjectId.isValid(event_id)) {
+      return apiResponse.onSuccess(res, "Please provide a valid event id.", 400, false);
+    }
+
+    // Validate player_id
+    if (!user_id || !mongoose.Types.ObjectId.isValid(user_id)) {
+      return apiResponse.onSuccess(res, "Please provide a valid user id.", 400, false);
+    }
+
+    // Check if event exists
+    const event = await EventModel.findById(event_id);
+    if (!event) {
+      return apiResponse.onSuccess(res, "Selected event not found.", 400, false);
+    }
+
+    // Check if user exists
+    const user = await UserModel.findById(user_id);
+    if (!user) {
+      return apiResponse.onSuccess(res, "Selected user not found with this id.", 400, false);
+    }
+
+    let already_sent_request = await CaptainModel.findOne({event_id : event_id, user_id: user_id})
+
+    if(already_sent_request) {
+      return apiResponse.onSuccess(res, "You have already invited same user for same event.", 400, false);
+    }
+
+    let captain = await CaptainModel.findOne({event_id : event_id, request_status: 2})
+
+    if(captain) {
+      return apiResponse.onSuccess(res, "Captain has been already choosen for this event.", 400, false);
+    }
+
+    let captainData = {
+      event_id : event_id,
+      user_id : user_id,
+      request_status : 1
+    }
+    await CaptainModel.create(captainData)
+
+    return apiResponse.onSuccess(res, "Captain choosen successfully.", 200, true);
+  } catch (err) {
+    console.log("err ", err);
+    return apiResponse.onError(res, "An error occurred while choosing the captain.", 500, false);
+  }
+};
 module.exports = {
   CreateEvent:CreateEvent,
-  SportsList: SportsList
+  SportsList: SportsList,
+  ChooseCaptain: ChooseCaptain
 };

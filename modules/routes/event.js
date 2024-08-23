@@ -6,5 +6,6 @@ let express = require("express"),
 
 router.post("/create", controller.CreateEvent);
 router.get("/sports_list", controller.SportsList);
+router.post("/choose_captain", controller.ChooseCaptain);
 
 module.exports = router;

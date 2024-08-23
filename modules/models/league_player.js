@@ -6,6 +6,7 @@ const schemaDefinition = new Schema(
     league_id: { type: mongoose.Schema.Types.ObjectId },
     player_id: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
     status: { type: Number }, // 1: pending, 2: Accepted, 3: Rejected
+    rating: { type: Array }
   },
   { versionKey: false, collection: "league_players", timestamps: true }
 );
