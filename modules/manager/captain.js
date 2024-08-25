@@ -53,6 +53,18 @@ let ChangeRequestStatus = async (body, req, res) => {
       );
     }
 
+    let captain_limt = await CaptainModel.find({
+      event_id: new mongoose.Types.ObjectId(event_id),
+    });
+    if (captain_limt.length >= 2) {
+      return apiResponse.onSuccess(
+        res,
+        "Another captain has accepted request.",
+        400,
+        false
+      );
+    }
+
     const captain = await CaptainModel.findOne({
       event_id: new mongoose.Types.ObjectId(event_id),
       user_id: new mongoose.Types.ObjectId(user_id),
@@ -68,6 +80,17 @@ let ChangeRequestStatus = async (body, req, res) => {
         request_status: Number(request_status),
       };
       await CaptainModel.create(create_captain);
+    }
+
+    // If captainship request accepted then update EventAttandanceModel model
+    if (Number(request_status) == 2) {
+      let attended_event_player = await EventAttandanceModel.findOne({
+        event_id: event_id,
+        user_id: user_id,
+      });
+      (attended_event_player.is_captain = true),
+        (attended_event_player.selection_status = 2);
+      await attended_event_player.save();
     }
 
     let result = "";
@@ -116,6 +139,7 @@ let AvailablePlayers = async (body, req, res) => {
     // Step 2: Get all users who have been selected for the event
     const selected_users = await EventAttandanceModel.find({
       event_id: event_id,
+      $or: [{ is_captain: false }, { is_captain: { $exists: false } }],
     }).populate("user_id");
 
     // Step 3: Filter out users who have other events on the same day

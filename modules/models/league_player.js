@@ -8,6 +8,7 @@ const schemaDefinition = new Schema(
     player_id: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
 
     status: { type: Number }, // 1: pending, 2: Accepted, 3: Rejected
+<<<<<<< HEAD
 
     rating: [
       {
@@ -15,6 +16,9 @@ const schemaDefinition = new Schema(
         rating: { type: Number, enum: [1, 2, 3] },
       },
     ],
+=======
+    rating: { type: Array }
+>>>>>>> main
   },
   { versionKey: false, collection: "league_players", timestamps: true }
 );

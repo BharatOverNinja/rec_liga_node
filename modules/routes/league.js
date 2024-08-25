@@ -44,5 +44,6 @@ router.get("/players/:league_id", controller.LeaguePlayersList);
 router.post("/process_request", controller.ProcessRequest);
 router.get("/player_detail/:player_id", controller.PlayerDetail);
 router.post("/rate_player", controller.ratePlayer);
+router.get("/players_by_rating/:league_id", controller.LeaguePlayersListByRating);
 
 module.exports = router;

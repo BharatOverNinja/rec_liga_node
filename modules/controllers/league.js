@@ -16,6 +16,9 @@ let LeaguePlayersList = (req, res, next) => {
   return leagueManager.LeaguePlayersList(req.body, req, res);
 };
 
+let LeaguePlayersListByRating = (req, res, next) => {
+  return leagueManager.LeaguePlayersListByRating(req.body, req, res);
+};
 let ProcessRequest = (req, res, next) => {
   return leagueManager.ProcessRequest(req.body, req, res);
 };
@@ -26,13 +29,14 @@ let PlayerDetail = (req, res, next) => {
 
 let ratePlayer = (req, res, next) => {
   return leagueManager.ratePlayer(req.body, req, res);
-}
+};
 
 module.exports = {
   CreateLeague: CreateLeague,
   LeagueDetail: LeagueDetail,
   LeagueJoinRequest: LeagueJoinRequest,
   LeaguePlayersList: LeaguePlayersList,
+  LeaguePlayersListByRating: LeaguePlayersListByRating,
   ProcessRequest: ProcessRequest,
   PlayerDetail: PlayerDetail,
   ratePlayer: ratePlayer,

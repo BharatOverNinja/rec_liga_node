@@ -1,6 +1,5 @@
 "use strict";
 
-const { includes } = require("lodash");
 let LeagueModel = require("../models/league"),
   SportsModel = require("../models/sports"),
   LeaguePlayerModel = require("../models/league_player"),
@@ -309,6 +308,109 @@ let LeaguePlayersList = async (body, req, res) => {
   }
 };
 
+let LeaguePlayersListByRating = async (body, req, res) => {
+  try {
+    const { league_id } = req.params;
+
+    // Validate league_id
+    if (!league_id || !mongoose.Types.ObjectId.isValid(league_id)) {
+      return apiResponse.onSuccess(
+        res,
+        "Please provide a valid league id.",
+        400,
+        false
+      );
+    }
+
+    // Check if league exists
+    let league = await LeagueModel.findById(league_id);
+    if (!league) {
+      return apiResponse.onSuccess(
+        res,
+        "Selected league not found.",
+        400,
+        false
+      );
+    }
+
+    // Aggregate and sort players by sum of ratings
+    let player_list = await LeaguePlayerModel.aggregate([
+      {
+        $match: {
+          league_id: new mongoose.Types.ObjectId(league_id),
+        },
+      },
+      {
+        $unwind: {
+          path: "$rating",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $group: {
+          _id: "$player_id",
+          total_rating: {
+            $sum: {
+              $cond: {
+                if: { $isNumber: "$rating.rating" },
+                then: "$rating.rating",
+                else: { $toDouble: "$rating.rating" },
+              },
+            },
+          },
+          playerInfo: { $first: "$$ROOT" },
+          ratings: { $push: "$rating" }, // Collect ratings into an array
+        },
+      },
+      {
+        $sort: { total_rating: -1 }, // Sort by total rating in descending order
+      },
+      {
+        $lookup: {
+          from: "users", // Assuming "users" is the name of your players collection
+          localField: "_id",
+          foreignField: "_id",
+          as: "playerDetails",
+        },
+      },
+      {
+        $unwind: "$playerDetails",
+      },
+      {
+        $project: {
+          _id: 1,
+          total_rating: 1,
+          ratings: 1, // Include the ratings array
+          "playerDetails._id": 1,
+          "playerDetails.name": 1,
+          "playerDetails.email": 1,
+          "playerDetails.role": 1,
+          "playerDetails.image": 1,
+          "playerInfo.league_id": 1,
+          "playerInfo.status": 1,
+          "playerInfo.updatedAt": 1,
+        },
+      },
+    ]);
+
+    return apiResponse.onSuccess(
+      res,
+      "League players fetched successfully.",
+      200,
+      true,
+      player_list
+    );
+  } catch (err) {
+    console.log("err ", err);
+    return apiResponse.onError(
+      res,
+      "An error occurred while fetching league players.",
+      500,
+      false
+    );
+  }
+};
+
 let ProcessRequest = async (body, req, res) => {
   try {
     const { league_id, player_id, status } = body;
@@ -479,6 +581,7 @@ module.exports = {
   LeagueDetail: LeagueDetail,
   LeagueJoinRequest: LeagueJoinRequest,
   LeaguePlayersList: LeaguePlayersList,
+  LeaguePlayersListByRating: LeaguePlayersListByRating,
   ProcessRequest: ProcessRequest,
   PlayerDetail: PlayerDetail,
   ratePlayer: ratePlayer,

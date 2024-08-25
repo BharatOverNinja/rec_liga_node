@@ -44,7 +44,6 @@ router.post("/update_user/:userId", (req, res, next) => {
       return res.status(400).send({ error: err.message });
     }
     console.log(req.body); // Check if req.body is being populated
-    // If multer succeeded, proceed to the controller
     controller.updateUser(req, res);
   });
 });
