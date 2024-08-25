@@ -9,7 +9,7 @@ const schemaDefinition = new Schema(
     date: { type: Date },
     location: { type: String },
     players_count: { type: Number },
-    players: [{ type: mongoose.Schema.Types.ObjectId, ref: "players" }],
+    players: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }],
     start_date: { type: Date },
     end_date: { type: Date },
     repeat_event: { type: String },

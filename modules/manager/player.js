@@ -1,83 +1,18 @@
 "use strict";
 
-let Player = require("../models/player"),
-  League = require("../models/league"),
+let League = require("../models/league"),
+  AttendEvent = require("../models/attend_event"),
+  Event = require("../models/event"),
+  LeaguePlayerModel = require("../models/league_player"),
   apiResponse = require("../helpers/apiResponse");
 
-let updateUser = async (body, req, res) => {
-  const { profile_image, nick_name, date_of_birth, city, sports, positions } =
-    body;
-  const authHeader = req.headers.authorization;
-
+let getUpcomingEvents = async (req, res) => {
   try {
-    if (!authHeader) {
-      return {
-        errormessage: "Authorization header missing",
-      };
-    }
-
-    const token = authHeader.split(" ")[1];
-    if (!token) {
-      return {
-        errormessage: "JWT token missing",
-      };
-    }
-
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    } catch (error) {
-      return {
-        errormessage: error.message,
-      };
-    }
-
-    const userId = decoded.id;
-
-    const user = await Player.findById(userId);
-    if (!user) {
-      return {
-        errormessage: "User not found",
-      };
-    }
-    Object.entries({
-      profile_image,
-      nick_name,
-      date_of_birth,
-      city,
-      sports,
-      positions,
-    }).forEach(([key, value]) => {
-      if (value !== undefined) {
-        user[key] = value;
-      }
-    });
-
-    await user.save();
-  } catch (err) {
-    console.log("err ", err);
-    return apiResponse.onError(
-      res,
-      "An error occurred while updating user.",
-      500,
-      false
-    );
-  }
-};
-
-let getUpcomingEvents = async (playerId, req, res) => {
-  try {
-    const player = await Player.findById(playerId);
-    if (!player) {
-      return apiResponse.onError(res, "Player not found", 404, false);
-    }
-
     const today = new Date();
 
     const events = await Event.find({
-      players: playerId,
-      date: { $gte: today },
-    });
+      start_date: { $gte: today },
+    }).sort({ start_date: 1 });
 
     if (events.length === 0)
       return apiResponse.onSuccess(
@@ -105,35 +40,47 @@ let getUpcomingEvents = async (playerId, req, res) => {
   }
 };
 
-let getPlayerProfile = async (playerId, req, res) => {
+let getAttendingEvents = async (req, res) => {
   try {
-    const player = await Player.findById(playerId);
-    if (!player) {
-      return apiResponse.onError(res, "Player not found", 404, false);
-    }
-    return apiResponse.onSuccess(res, "Player profile fetched", 200, player);
+    const today = new Date();
+
+    const events = await AttendEvent.find({
+      user_id: req.params.userId,
+      start_date: { $gte: today },
+    }).sort({ start_date: 1 });
+
+    if (events.length === 0)
+      return apiResponse.onSuccess(
+        res,
+        "No upcoming events found.",
+        404,
+        false
+      );
+
+    return apiResponse.onSuccess(
+      res,
+      "Events fetched successfully.",
+      200,
+      true,
+      events
+    );
   } catch (err) {
     console.log("err ", err);
     return apiResponse.onError(
       res,
-      "An error occurred while fetching player profile.",
+      "An error occurred while fetching upcoming events.",
       500,
       false
     );
   }
 };
 
-let getPastEvents = async (playerId, req, res) => {
+let getPastEvents = async (req, res) => {
   try {
-    const player = await Player.findById(playerId);
-
-    if (!player) {
-      return apiResponse.onError(res, "Player not found", 404, false);
-    }
     const today = new Date();
 
-    const events = await Event.find({
-      players: playerId,
+    const events = await AttendEvent.find({
+      user_id: req.params.userId,
       date: { $lt: today },
     }).sort({ date: -1 });
 
@@ -152,48 +99,31 @@ let getPastEvents = async (playerId, req, res) => {
   }
 };
 
-let rateTeammate = async (body, req, res) => {
-  const { teammateId, rating } = body.teammateId;
-
-  try {
-    const player = await Player.findById(teammateId);
-    if (!player) {
-      return apiResponse.onError(res, "Player not found", 404, false);
-    }
-    player.rating = rating;
-    await player.save();
-
-    return apiResponse.onSuccess(res, "Player rated successfully", 200, player);
-  } catch (err) {
-    console.log("err ", err);
-    return apiResponse.onError(
-      res,
-      "An error occurred while rating player.",
-      500,
-      false
-    );
-  }
-};
-
 let getAllLeaguePlayers = async (req, res) => {
   const { leagueId } = req.body;
+
   try {
-    const league = await League.findById(leagueId);
-    if (!league) {
-      return apiResponse.onError(res, "League not found", 404, false);
+    const leaguePlayers = await LeaguePlayerModel.find({
+      league_id: leagueId,
+    }).populate("player_id");
+
+    if (!leaguePlayers || leaguePlayers.length === 0) {
+      return apiResponse.onSuccess(
+        res,
+        "No players found for this league",
+        200,
+        []
+      );
     }
 
-    const players = await Player.find({ _id: { $in: league.players } });
-    if (players.length === 0)
-      return apiResponse.onSuccess(res, "No players found", 404, false);
     return apiResponse.onSuccess(
       res,
       "Players fetched successfully",
       200,
-      players
+      leaguePlayers
     );
   } catch (err) {
-    console.log("err ", err);
+    console.log("Error fetching players: ", err);
     return apiResponse.onError(
       res,
       "An error occurred while fetching players.",
@@ -351,7 +281,7 @@ let getLeaderBoard = async (req, res) => {
       return apiResponse.onError(res, "League not found", 404, false);
     }
 
-    const playersWithPoints = await Player.find({
+    const playersWithPoints = await LeaguePlayerModel.find({
       _id: { $in: league.players },
     }).sort({ points: -1 });
 
@@ -376,12 +306,10 @@ let getLeaderBoard = async (req, res) => {
 };
 
 module.exports = {
-  updateUser: updateUser,
   getUpcomingEvents: getUpcomingEvents,
-  getPlayerProfile: getPlayerProfile,
-  getPastEvents: getPastEvents,
-  rateTeammate: rateTeammate,
+  getAttendingEvents: getAttendingEvents,
   getAllLeaguePlayers: getAllLeaguePlayers,
+  getPastEvents: getPastEvents,
   getPlayerLeagues: getPlayerLeagues,
   getLeagueDetails: getLeagueDetails,
   acceptEventRequest: acceptEventRequest,

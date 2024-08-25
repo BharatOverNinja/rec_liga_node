@@ -43,5 +43,6 @@ router.get("/join_request/:league_id", controller.LeagueJoinRequest);
 router.get("/players/:league_id", controller.LeaguePlayersList);
 router.post("/process_request", controller.ProcessRequest);
 router.get("/player_detail/:player_id", controller.PlayerDetail);
+router.post("/rate_player", controller.ratePlayer);
 
 module.exports = router;

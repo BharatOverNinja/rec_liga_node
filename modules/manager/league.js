@@ -445,6 +445,35 @@ let PlayerDetail = async (body, req, res) => {
   }
 };
 
+let ratePlayer = async (body, req, res) => {
+  const { playerId, rating, ratedBy } = body;
+
+  try {
+    const user = await LeaguePlayerModel.findOne({ player_id: playerId });
+
+    if (!user) {
+      return apiResponse.onError(res, "User not found", 404, false);
+    }
+
+    user.rating.push({
+      ratedBy: ratedBy,
+      rating: rating,
+    });
+
+    await user.save();
+
+    return apiResponse.onSuccess(res, "Player rated successfully", 200, user);
+  } catch (err) {
+    console.log("err ", err);
+    return apiResponse.onError(
+      res,
+      "An error occurred while rating player.",
+      500,
+      false
+    );
+  }
+};
+
 module.exports = {
   CreateLeague: CreateLeague,
   LeagueDetail: LeagueDetail,
@@ -452,4 +481,5 @@ module.exports = {
   LeaguePlayersList: LeaguePlayersList,
   ProcessRequest: ProcessRequest,
   PlayerDetail: PlayerDetail,
+  ratePlayer: ratePlayer,
 };

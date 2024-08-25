@@ -1,8 +1,6 @@
-"use strict";
-
 let express = require("express"),
   router = express.Router(),
-  controller = require("../controllers/user");
+  controller = require("../controllers/organizer");
 
 router.get("/organizer_profile", controller.organizerDetails);
 

@@ -1,19 +1,29 @@
 let userManager = require("../manager/user");
 
-let SportsList = (req, res, next) => {
-  return userManager.SportsList(req.body, req, res);
-};
-
 let storeRegistrationData = (req, res, next) => {
   return userManager.storeRegistrationData(req.body, req, res);
 };
 
+let SportsList = (req, res, next) => {
+  return userManager.SportsList(req.body, req, res);
+};
+
 let getCurrentUserDetails = (req, res, next) => {
-  return userManager.getCurrentUserDetails(req.body, req, res);
-}
+  return userManager.getCurrentUserDetails(req, res);
+};
+
+let updateUser = (req, res, next) => {
+  return userManager.updateUser(req, res);
+};
+
+let deleteAccount = (req, res) => {
+  return userManager.deleteAccount(req, res);
+};
 
 module.exports = {
-  SportsList: SportsList,
-  storeRegistrationData: storeRegistrationData,
-  getCurrentUserDetails: getCurrentUserDetails,
+  storeRegistrationData,
+  SportsList,
+  getCurrentUserDetails,
+  updateUser,
+  deleteAccount,
 };

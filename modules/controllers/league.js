@@ -24,6 +24,10 @@ let PlayerDetail = (req, res, next) => {
   return leagueManager.PlayerDetail(req.body, req, res);
 };
 
+let ratePlayer = (req, res, next) => {
+  return leagueManager.ratePlayer(req.body, req, res);
+}
+
 module.exports = {
   CreateLeague: CreateLeague,
   LeagueDetail: LeagueDetail,
@@ -31,4 +35,5 @@ module.exports = {
   LeaguePlayersList: LeaguePlayersList,
   ProcessRequest: ProcessRequest,
   PlayerDetail: PlayerDetail,
+  ratePlayer: ratePlayer,
 };
