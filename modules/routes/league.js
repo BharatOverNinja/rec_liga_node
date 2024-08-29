@@ -37,13 +37,18 @@ const upload = multer({
   },
 }).single("image"); // 'image' is the name of the field in the form
 
-router.post("/create", upload, controller.CreateLeague);
-router.get("/league_detail/:league_id", controller.LeagueDetail);
-router.get("/join_request/:league_id", controller.LeagueJoinRequest);
-router.get("/players/:league_id", controller.LeaguePlayersList);
-router.post("/process_request", controller.ProcessRequest);
-router.get("/player_detail/:player_id", controller.PlayerDetail);
-router.post("/rate_player", controller.ratePlayer);
+router.post("/create/:userId", upload, controller.CreateLeague); //done
+
+router.get("/league_detail/:league_id", controller.LeagueDetail); //done
+
+router.get("/join_requests/:league_id", controller.LeagueJoinRequest); //done
+
+router.get("/players/:league_id", controller.LeaguePlayersList); //done
+
+router.post("/process_request", controller.ProcessRequest); //done
+
+router.get("/player_detail/:player_id", controller.PlayerDetail); //done
+
 router.get("/players_by_rating/:league_id", controller.LeaguePlayersListByRating);
 
 module.exports = router;

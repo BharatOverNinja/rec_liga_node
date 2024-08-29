@@ -35,7 +35,7 @@ const upload = multer({
   fileFilter: fileFilter,
 }).single("profile_picture");
 
-router.post("/store_registration_data", controller.storeRegistrationData);
+router.post("/store_registration_data", controller.storeRegistrationData); //done
 
 router.post("/update_user/:userId", (req, res, next) => {
   upload(req, res, function (err) {
@@ -46,18 +46,15 @@ router.post("/update_user/:userId", (req, res, next) => {
     console.log(req.body); // Check if req.body is being populated
     controller.updateUser(req, res);
   });
-});
+}); //done
 
 router.get(
   "/get_current_user_details/:email",
-  controller.getCurrentUserDetails
-);
+  controller.getCurrentUserDetails 
+); //done
 
 router.get("/sports_list", controller.SportsList);
 
-router.delete("/delete_account/:userId", controller.deleteAccount);
-
-// router.get("/upcoming_events/:playerId", controller.getUpcomingEvents);
-// router.get("/past_events/:playerId", controller.getPastEvents);
+router.delete("/delete_account/:userId", controller.deleteAccount); //done
 
 module.exports = router;

@@ -29,11 +29,11 @@ let uploadEventResult = (req, res, next) => {
 };
 
 module.exports = {
-  organizerDetails: organizerDetails,
-  getLeaguesAddedByOrganizer: getLeaguesAddedByOrganizer,
-  getUpcomingEvents: getUpcomingEvents,
-  getPastEvents: getPastEvents,
-  getEventDetails: getEventDetails,
-  getPastEventResults: getPastEventResults,
-  uploadEventResult: uploadEventResult,
+  organizerDetails,
+  getLeaguesAddedByOrganizer,
+  getUpcomingEvents,
+  getPastEvents,
+  getEventDetails,
+  getPastEventResults,
+  uploadEventResult,
 };

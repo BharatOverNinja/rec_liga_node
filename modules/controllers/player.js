@@ -24,31 +24,36 @@ let getLeagueDetails = (req, res) => {
   return playerManager.getLeagueDetails(req, res);
 };
 
-let acceptEventRequest = (req, res) => {
-  return playerManager.acceptEventRequest(req, res);
+let attendEvent = (req, res) => {
+  return playerManager.attendEvent(req, res);
 };
 
 let rejectEventRequest = (req, res) => {
   return playerManager.rejectEventRequest(req, res);
 };
 
-let getEventRequests = (req, res) => {
-  return playerManager.getEventRequests(req, res);
+let getLeaderboard = (req, res) => {
+  return playerManager.getLeaderboard(req, res);
 };
 
-let getLeaderBoard = (req, res) => {
-  return playerManager.getLeaderBoard(req, res);
+let ratePlayer = (req, res) => {
+  return playerManager.ratePlayer(req, res);
+};
+
+let getPublicLeagues = (req, res) => {
+  return playerManager.getPublicLeagues(req, res);
 };
 
 module.exports = {
-  getUpcomingEvents: getUpcomingEvents,
-  getAttendingEvents: getAttendingEvents,
-  getPastEvents: getPastEvents,
-  getAllLeaguePlayers: getAllLeaguePlayers,
-  getPlayerLeagues: getPlayerLeagues,
-  getLeagueDetails: getLeagueDetails,
-  acceptEventRequest: acceptEventRequest,
-  rejectEventRequest: rejectEventRequest,
-  getEventRequests: getEventRequests,
-  getLeaderBoard: getLeaderBoard,
+  getUpcomingEvents,
+  getAttendingEvents,
+  getPastEvents,
+  getAllLeaguePlayers,
+  getPlayerLeagues,
+  getLeagueDetails,
+  attendEvent,
+  rejectEventRequest,
+  getLeaderboard,
+  ratePlayer,
+  getPublicLeagues
 };

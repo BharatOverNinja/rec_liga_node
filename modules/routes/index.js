@@ -10,12 +10,19 @@ let express = require("express"),
   chatRoute = require("./chat.js");
 
 router.use(`/user`, userRoute);
+
 router.use(`/league`, leagueRoute);
+
 router.use(`/event`, eventRoute);
+
 router.use(`/captain`, captainRoute);
+
 router.use(`/notifications`, notificationsRoute);
+
 router.use(`/organizer`, organizerRoute);
+
 router.use(`/player`, playerRoute);
+
 router.use(`/chat`, chatRoute);
 
 module.exports = router;

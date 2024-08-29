@@ -18,7 +18,8 @@ let CreateEvent = async (body, req, res) => {
       title,
       date,
       location,
-      playes_count,
+      total_teams,
+      players_count,
       start_date,
       end_date,
       repeat_event,
@@ -71,10 +72,10 @@ let CreateEvent = async (body, req, res) => {
     }
 
     // Validate name
-    if (!playes_count) {
+    if (!players_count) {
       return apiResponse.onSuccess(
         res,
-        "playes_count is required.",
+        "players_count is required.",
         400,
         false
       );
@@ -121,7 +122,8 @@ let CreateEvent = async (body, req, res) => {
       title: title,
       date: date,
       location: location,
-      playes_count: playes_count,
+      total_teams: total_teams,
+      players_count: players_count,
       start_date: new Date(start_date),
       end_date: new Date(end_date),
       repeat_event: repeat_event,
@@ -360,10 +362,10 @@ let CreateTeam = async (body, req, res) => {
       );
     }
 
-    if (event.playes_count && player_id.length > event.playes_count) {
+    if (event.players_count && player_id.length > event.players_count) {
       return apiResponse.onError(
         res,
-        `You cannot select more than ${event.playes_count} players.`,
+        `You cannot select more than ${event.players_count} players.`,
         400,
         false
       );

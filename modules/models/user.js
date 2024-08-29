@@ -29,7 +29,7 @@ const schemaDefinition = new Schema(
 
     sports: [{ type: String }],
 
-    rank: { type: String },
+    rank: { type: Number },
 
     points: { type: Number },
 

@@ -69,7 +69,7 @@ let ChangeRequestStatus = async (body, req, res) => {
       event_id: new mongoose.Types.ObjectId(event_id),
       user_id: new mongoose.Types.ObjectId(user_id),
     });
-    // If captain exist for same event then update status or else create new captain
+
     if (captain) {
       captain.request_status = request_status;
       await captain.save();
@@ -176,6 +176,7 @@ let AvailablePlayers = async (body, req, res) => {
     console.log("err ", err);
   }
 };
+
 module.exports = {
   ChangeRequestStatus: ChangeRequestStatus,
   AvailablePlayers: AvailablePlayers,

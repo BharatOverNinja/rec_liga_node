@@ -64,6 +64,8 @@ let SportsList = async (body, req, res) => {
 let getCurrentUserDetails = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.params.email });
+    console.log("user", user);
+    
     if (!user) {
       return apiResponse.onError(res, "User not found", 400);
     }
@@ -91,15 +93,12 @@ let updateUser = async (req, res) => {
       return apiResponse.onError(res, "User not found", 404);
     }
 
-    let profile_image = "";
+    let profile_image = user.profile_picture;
     if (req.file && req.file.filename) {
       profile_image = "/uploads/user/" + req.file.filename;
     }
 
-    // const sportsIds = await Sports.find({ name: { $in: sports } }).select('_id');
-    // user.sports = sportsIds.map(sport => sport._id);
-
-    Object.entries({
+    const updates = {
       profile_picture: profile_image,
       full_name,
       nick_name,
@@ -109,8 +108,10 @@ let updateUser = async (req, res) => {
       city,
       sports,
       positions,
-    }).forEach(([key, value]) => {
-      if (value !== undefined) {
+    };
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value !== undefined && value !== "") {
         user[key] = value;
       }
     });
@@ -128,7 +129,7 @@ let updateUser = async (req, res) => {
     console.log("Error updating user: ", err);
     return apiResponse.onError(
       res,
-      "An error occurred while updating user.",
+      "An error occurred while updating the user.",
       500
     );
   }

@@ -8,7 +8,7 @@ let SportsList = (req, res, next) => {
   return userManager.SportsList(req.body, req, res);
 };
 
-let getCurrentUserDetails = (req, res, next) => {
+let getCurrentUserDetails = (req, res) => {
   return userManager.getCurrentUserDetails(req, res);
 };
 
