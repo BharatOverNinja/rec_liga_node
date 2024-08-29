@@ -11,7 +11,7 @@ const schemaDefinition = new Schema(
     organizer_id: { type: mongoose.Schema.Types.ObjectId },
     join_privacy: { type: Number },
     statistics_info: { type: Array },
-    image: { type: String },
+    image: { type: String, default: "" },
     players: [{ type: mongoose.Schema.Types.ObjectId, ref: "players" }],
   },
   { versionKey: false, collection: "leagues", timestamps: true }
