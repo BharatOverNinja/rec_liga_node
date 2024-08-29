@@ -195,6 +195,7 @@ let getAllLeaguePlayers = async (req, res) => {
     // Find all players in the same leagues
     const leaguePlayers = await LeaguePlayerModel.find({
       league_id: { $in: leagueIds },
+      status: 2,
     });
 
     // Extract player IDs from the results and filter out the current user
@@ -225,6 +226,7 @@ let getPlayerLeagues = async (req, res) => {
 
     const leaguePlayers = await LeaguePlayerModel.find({
       player_id: userId,
+      status: 2,
     });
 
     if (!leaguePlayers || leaguePlayers.length === 0) {
@@ -287,6 +289,66 @@ let getLeagueDetails = async (req, res) => {
     return apiResponse.onError(
       res,
       "An error occurred while fetching league.",
+      500,
+      false
+    );
+  }
+};
+
+let joinLeague = async (req, res) => {
+  const userId = req.params.userId;
+  const { leagueId } = req.body;
+
+  try {
+    // Find the league by its ID
+    const league = await League.findById(leagueId);
+    if (!league) {
+      return apiResponse.onError(res, "League not found", 404, false);
+    }
+
+    // Find the user by their ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return apiResponse.onError(res, "User not found", 404, false);
+    }
+
+    // Check if the user is already part of the league
+    const existingPlayer = await LeaguePlayerModel.findOne({
+      league_id: leagueId,
+      player_id: userId,
+    });
+
+    if (existingPlayer) {
+      return apiResponse.onError(
+        res,
+        "User is already part of this league.",
+        400,
+        false
+      );
+    }
+
+    // Create a new LeaguePlayerModel document with status: 1 (pending)
+    const newPlayer = new LeaguePlayerModel({
+      league_id: leagueId,
+      player_id: userId,
+      status: 1, // Status is set to 1 for pending
+      rating: [],
+    });
+
+    // Save the new player document
+    await newPlayer.save();
+
+    return apiResponse.onSuccess(
+      res,
+      "User requested to join league successfully. Awaiting approval.",
+      200,
+      newPlayer
+    );
+  } catch (err) {
+    console.log("err ", err);
+    return apiResponse.onError(
+      res,
+      "An error occurred while joining league.",
       500,
       false
     );
@@ -467,6 +529,7 @@ module.exports = {
   getPastEvents,
   getPlayerLeagues,
   getLeagueDetails,
+  joinLeague,
   attendEvent,
   rejectEventRequest,
   getLeaderboard,

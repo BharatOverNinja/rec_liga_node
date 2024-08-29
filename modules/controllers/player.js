@@ -24,6 +24,10 @@ let getLeagueDetails = (req, res) => {
   return playerManager.getLeagueDetails(req, res);
 };
 
+let joinLeague = (req, res) => {
+  return playerManager.joinLeague(req, res);
+};
+
 let attendEvent = (req, res) => {
   return playerManager.attendEvent(req, res);
 };
@@ -51,9 +55,10 @@ module.exports = {
   getAllLeaguePlayers,
   getPlayerLeagues,
   getLeagueDetails,
+  joinLeague,
   attendEvent,
   rejectEventRequest,
   getLeaderboard,
   ratePlayer,
-  getPublicLeagues
+  getPublicLeagues,
 };
