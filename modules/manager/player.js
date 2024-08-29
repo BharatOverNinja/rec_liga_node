@@ -24,7 +24,12 @@ let getUpcomingEvents = async (req, res) => {
     const events = await Event.find({
       league_id: leagueId,
       start_date: { $gte: today },
-    }).sort({ start_date: 1 }).populate("league_id");
+    })
+      .sort({ start_date: 1 })
+      .populate({
+        path: "league_id",
+        select: "-__v",
+      });
 
     if (events.length === 0) {
       return apiResponse.onSuccess(
@@ -35,12 +40,19 @@ let getUpcomingEvents = async (req, res) => {
       );
     }
 
+    const formattedEvents = events.map((event) => {
+      const formattedEvent = event.toObject(); // Convert Mongoose document to plain JavaScript object
+      formattedEvent.league = formattedEvent.league_id; // Rename 'league_id' to 'league'
+      delete formattedEvent.league_id; // Remove the old 'league_id' field
+      return formattedEvent;
+    });
+
     return apiResponse.onSuccess(
       res,
       "Events fetched successfully.",
       200,
       true,
-      events
+      formattedEvents
     );
   } catch (err) {
     console.log("err ", err);
@@ -64,7 +76,10 @@ let getAttendingEvents = async (req, res) => {
       start_date: { $gte: now },
     })
       .populate("event_id")
-      .populate("league_id")
+      .populate({
+        path: "league_id",
+        select: "-__v",
+      })
       .populate("team_id")
       .sort({ start_date: 1 });
 
@@ -77,12 +92,20 @@ let getAttendingEvents = async (req, res) => {
       );
     }
 
+    // Rename 'league_id' to 'league' in each attending event
+    const formattedEvents = attendingEvents.map((event) => {
+      const formattedEvent = event.toObject(); // Convert Mongoose document to plain JavaScript object
+      formattedEvent.league = formattedEvent.league_id; // Rename 'league_id' to 'league'
+      delete formattedEvent.league_id; // Remove the old 'league_id' field
+      return formattedEvent;
+    });
+
     return apiResponse.onSuccess(
       res,
       "Attending events fetched successfully.",
       200,
       true,
-      attendingEvents
+      formattedEvents
     );
   } catch (err) {
     console.log("err ", err);
@@ -106,7 +129,10 @@ let getPastEvents = async (req, res) => {
       end_date: { $lt: now },
     })
       .populate("event_id")
-      .populate("league_id")
+      .populate({
+        path: "league_id",
+        select: "-__v",
+      })
       .populate("team_id")
       .sort({ start_date: 1 });
 
@@ -119,29 +145,19 @@ let getPastEvents = async (req, res) => {
       );
     }
 
-    // const userId = req.params.userId;
-    // const userLeagues = await LeaguePlayerModel.findOne({ player_id: userId });
-    // if (!userLeagues) {
-    //   return apiResponse.onSuccess(res, "No past events found.", 404, false);
-    // }
-    // const leagueId = leaguePlayer.league_id;
-    // const leagueIds = userLeagues.map((league) => league.league_id);
-    // const today = new Date();
-    // const events = await Event.find({
-    //   league_id: leagueId,
-    //   end_date: { $lt: today },
-    //   players: userId,
-    // }).sort({ end_date: -1 });
-    // if (events.length === 0) {
-    //   return apiResponse.onSuccess(res, "No past events found.", 404, false);
-    // }
+    const formattedEvents = pastEvents.map((event) => {
+      const formattedEvent = event.toObject(); // Convert Mongoose document to plain JavaScript object
+      formattedEvent.league = formattedEvent.league_id; // Rename 'league_id' to 'league'
+      delete formattedEvent.league_id; // Remove the old 'league_id' field
+      return formattedEvent;
+    });
 
     return apiResponse.onSuccess(
       res,
       "Past events fetched successfully.",
       200,
       true,
-      pastEvents
+      formattedEvents
     );
   } catch (err) {
     console.log("err ", err);
@@ -237,8 +253,9 @@ let getPlayerLeagues = async (req, res) => {
 
     return apiResponse.onSuccess(
       res,
-      "Leagues fetched successfully",
+      "Leagues fetched successfully.",
       200,
+      true,
       leagues
     );
   } catch (err) {
