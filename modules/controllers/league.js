@@ -1,7 +1,7 @@
 let leagueManager = require("../manager/league");
 
-let CreateLeague = (req, res, next) => {
-  return leagueManager.CreateLeague(req.body, req, res);
+let CreateLeague = (req, res) => {
+  return leagueManager.CreateLeague(req, res);
 };
 
 let LeagueDetail = (req, res, next) => {

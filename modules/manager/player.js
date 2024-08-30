@@ -11,18 +11,22 @@ let getUpcomingEvents = async (req, res) => {
   try {
     const userId = req.params.userId;
 
-    const leaguePlayer = await LeaguePlayerModel.find({ player_id: userId });
+    // Fetch leagues the user has joined
+    const leaguePlayers = await LeaguePlayerModel.find({
+      player_id: userId,
+      status: 2,
+    }).select("league_id");
 
-    if (!leaguePlayer || leaguePlayer.length === 0) {
+    if (!leaguePlayers || leaguePlayers.length === 0) {
       return apiResponse.onSuccess(res, "No results found.", 404, false);
     }
 
-    const leagueId = leaguePlayer[0].league_id;
+    const leagueIds = leaguePlayers.map((lp) => lp.league_id);
 
+    // Fetch upcoming events from the leagues the user has joined
     const today = new Date();
-
     const events = await Event.find({
-      league_id: leagueId,
+      league_id: { $in: leagueIds },
       start_date: { $gte: today },
     })
       .sort({ start_date: 1 })
@@ -31,7 +35,20 @@ let getUpcomingEvents = async (req, res) => {
         select: "-__v",
       });
 
-    if (events.length === 0) {
+    // Fetch events that the user has already joined
+    const attendedEvents = await AttendEvent.find({
+      user_id: userId,
+      selection_status: 1,
+    }).select("event_id");
+
+    const attendedEventIds = attendedEvents.map((ae) => ae.event_id);
+
+    // Exclude events that the user has already joined
+    const filteredEvents = events.filter(
+      (event) => !attendedEventIds.includes(event._id.toString())
+    );
+
+    if (filteredEvents.length === 0) {
       return apiResponse.onSuccess(
         res,
         "No upcoming events found.",
@@ -40,19 +57,12 @@ let getUpcomingEvents = async (req, res) => {
       );
     }
 
-    const formattedEvents = events.map((event) => {
-      const formattedEvent = event.toObject(); // Convert Mongoose document to plain JavaScript object
-      formattedEvent.league = formattedEvent.league_id; // Rename 'league_id' to 'league'
-      delete formattedEvent.league_id; // Remove the old 'league_id' field
-      return formattedEvent;
-    });
-
     return apiResponse.onSuccess(
       res,
       "Events fetched successfully.",
       200,
       true,
-      formattedEvents
+      filteredEvents
     );
   } catch (err) {
     console.log("err ", err);
@@ -170,6 +180,58 @@ let getPastEvents = async (req, res) => {
   }
 };
 
+let getPlayerLeagues = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    console.log("userId ", userId);
+
+    const leaguePlayers = await LeaguePlayerModel.find({
+      player_id: userId,
+      status: 2,
+    });
+
+    if (!leaguePlayers || leaguePlayers.length === 0) {
+      return apiResponse.onSuccess(
+        res,
+        "No leagues found for this player",
+        200,
+        []
+      );
+    }
+
+    const leagueIds = leaguePlayers.map((lp) => lp.league_id);
+
+    const leagues = await League.find({
+      _id: { $in: leagueIds },
+    });
+
+    if (!leagues || leagues.length === 0) {
+      return apiResponse.onSuccess(
+        res,
+        "No leagues found for this player",
+        200,
+        []
+      );
+    }
+
+    return apiResponse.onSuccess(
+      res,
+      "Leagues fetched successfully.",
+      200,
+      true,
+      leagues
+    );
+  } catch (err) {
+    console.log("Error fetching leagues for player:", err);
+    return apiResponse.onError(
+      res,
+      "An error occurred while fetching leagues",
+      500,
+      false
+    );
+  }
+};
+
 let getAllLeaguePlayers = async (req, res) => {
   const { userId } = req.params;
 
@@ -220,69 +282,51 @@ let getAllLeaguePlayers = async (req, res) => {
   }
 };
 
-let getPlayerLeagues = async (req, res) => {
-  try {
-    const userId = req.params.userId;
-
-    const leaguePlayers = await LeaguePlayerModel.find({
-      player_id: userId,
-      status: 2,
-    });
-
-    if (!leaguePlayers || leaguePlayers.length === 0) {
-      return apiResponse.onSuccess(
-        res,
-        "No leagues found for this player",
-        200,
-        []
-      );
-    }
-
-    const leagueIds = leaguePlayers.map((lp) => lp.league_id);
-
-    const leagues = await League.find({
-      _id: { $in: leagueIds },
-    });
-
-    if (!leagues || leagues.length === 0) {
-      return apiResponse.onSuccess(
-        res,
-        "No leagues found for this player",
-        200,
-        []
-      );
-    }
-
-    return apiResponse.onSuccess(
-      res,
-      "Leagues fetched successfully.",
-      200,
-      true,
-      leagues
-    );
-  } catch (err) {
-    console.log("Error fetching leagues for player:", err);
-    return apiResponse.onError(
-      res,
-      "An error occurred while fetching leagues",
-      500,
-      false
-    );
-  }
-};
-
 let getLeagueDetails = async (req, res) => {
   const { leagueId } = req.body;
   try {
-    const league = await League.findById(leagueId);
+    // Fetch league details
+    const league = await League.findById(leagueId)
+      .populate("events") // Populate the events details
+      .populate({
+        path: "players",
+        select:
+          "full_name nick_name email phone profile_picture rank points wins losses ties",
+        model: "users", // Ensure that Mongoose uses the correct model for players
+      }); // Populate the players' basic details
+
     if (!league) {
       return apiResponse.onError(res, "League not found", 404, false);
     }
+
+    // Fetch all player IDs associated with the league from league_players collection
+    const leaguePlayers = await LeaguePlayerModel.find({
+      league_id: leagueId,
+      status: 2,
+    }).select("player_id");
+
+    const playerIds = leaguePlayers.map((lp) => lp.player_id);
+
+    // Fetch player details from the users collection
+    const players = await User.find({ _id: { $in: playerIds } }).select(
+      "full_name nick_name email phone profile_picture rank points wins losses ties"
+    );
+
+    // Fetch all events associated with the league
+    const events = await Event.find({ league_id: leagueId });
+
+    // Combine league details, players, and events into one response
+    const response = {
+      league,
+      players,
+      events,
+    };
+
     return apiResponse.onSuccess(
       res,
       "League fetched successfully",
       200,
-      league
+      response
     );
   } catch (err) {
     console.log("err ", err);
@@ -327,11 +371,10 @@ let joinLeague = async (req, res) => {
       );
     }
 
-    // Create a new LeaguePlayerModel document with status: 1 (pending)
     const newPlayer = new LeaguePlayerModel({
       league_id: leagueId,
       player_id: userId,
-      status: 1, // Status is set to 1 for pending
+      status: 1,
       rating: [],
     });
 

@@ -8,9 +8,9 @@ let LeagueModel = require("../models/league"),
   apiResponse = require("../helpers/apiResponse");
 const mongoose = require("mongoose");
 
-let CreateLeague = async (body, req, res) => {
+let CreateLeague = async (req, res) => {
   try {
-    const { name, sport_id, join_privacy, statistics_info } = body;
+    const { name, sport_id, join_privacy, statistics_info } = req.body;
     const userId = req.params.userId;
 
     // Validate name

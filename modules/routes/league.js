@@ -1,15 +1,15 @@
 "use strict";
 
-let express = require("express"),
-  router = express.Router(),
-  multer = require("multer"),
-  path = require("path"),
-  controller = require("../controllers/league");
+const express = require("express");
+const router = express.Router();
+const multer = require("multer");
+const path = require("path");
+const controller = require("../controllers/league");
 
-// Set up storage
+// Set up storage for multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/league/"); // specify the destination folder
+    cb(null, "uploads/league/"); // Specify the destination folder
   },
   filename: function (req, file, cb) {
     cb(
@@ -19,7 +19,7 @@ const storage = multer.diskStorage({
   },
 });
 
-// Initialize upload
+// Initialize multer to handle file uploads
 const upload = multer({
   storage: storage,
   fileFilter: function (req, file, cb) {
@@ -35,9 +35,20 @@ const upload = multer({
       cb("Error: Images Only!");
     }
   },
-}).single("image"); // 'image' is the name of the field in the form
+}).single("image");
 
-router.post("/create/:userId", upload, controller.CreateLeague); //done
+router.post("/create/:userId", (req, res) => {
+  upload(req, res, function (err) {
+    if (err) {
+      return res.status(400).json({ message: err });
+    }
+
+    console.log("req.body: ", req.body);
+    console.log("req.file: ", req.file);
+
+    controller.CreateLeague(req, res);
+  });
+}); //done
 
 router.get("/league_detail/:league_id", controller.LeagueDetail); //done
 
@@ -49,6 +60,9 @@ router.post("/process_request", controller.ProcessRequest); //done
 
 router.get("/player_detail/:player_id", controller.PlayerDetail); //done
 
-router.get("/players_by_rating/:league_id", controller.LeaguePlayersListByRating);
+router.get(
+  "/players_by_rating/:league_id",
+  controller.LeaguePlayersListByRating
+);
 
 module.exports = router;
