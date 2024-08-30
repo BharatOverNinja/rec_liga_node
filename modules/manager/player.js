@@ -326,6 +326,7 @@ let getLeagueDetails = async (req, res) => {
       res,
       "League fetched successfully",
       200,
+      true,
       response
     );
   } catch (err) {
