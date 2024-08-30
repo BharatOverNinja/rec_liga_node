@@ -19,7 +19,7 @@ const schemaDefinition = new Schema(
 
     role: { type: String, enum: ["Player", "League Organizer"] }, // league_organizer, player
 
-    profile_picture: { type: String },
+    profile_picture: { type: String, default: "" },
 
     date_of_birth: { type: Date },
 

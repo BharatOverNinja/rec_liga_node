@@ -3,6 +3,26 @@
 let NotificationModel = require("../models/notification"),
   apiResponse = require("../helpers/apiResponse");
 const mongoose = require("mongoose");
+const admin = require("../middleware/firebase_admin.js");
+
+let sendNotification = async (req, res) => {
+  const { token, title, body } = req.body;
+
+  const message = {
+    notification: {
+      title: title,
+      body: body,
+    },
+    token: token,
+  };
+
+  try {
+    const response = await admin.messaging().send(message);
+    res.status(200).json({ success: true, response });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
 
 let NotificationList = async (body, req, res) => {
   try {
@@ -35,5 +55,6 @@ let NotificationList = async (body, req, res) => {
 };
 
 module.exports = {
-  NotificationList: NotificationList,
+  NotificationList,
+  sendNotification,
 };

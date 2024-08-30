@@ -291,7 +291,7 @@ let getLeagueDetails = async (req, res) => {
       .populate({
         path: "players",
         select:
-          "full_name nick_name email phone profile_picture rank points wins losses ties",
+          "full_name nick_name email role phone profile_picture rank points wins losses ties cw att",
         model: "users", // Ensure that Mongoose uses the correct model for players
       }); // Populate the players' basic details
 
