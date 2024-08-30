@@ -309,7 +309,7 @@ let getLeagueDetails = async (req, res) => {
 
     // Fetch player details from the users collection
     const players = await User.find({ _id: { $in: playerIds } }).select(
-      "full_name nick_name email phone profile_picture rank points wins losses ties"
+      "full_name nick_name email phone profile_picture rank points wins losses ties cw att role city date_of_birth sports positions"  
     );
 
     // Fetch all events associated with the league
@@ -486,7 +486,7 @@ let getLeaderboard = async (req, res) => {
   try {
     const topPlayers = await User.find({ role: "Player" })
       .sort({ points: -1 })
-      .select("profile_picture full_name points wins losses ties")
+      .select("profile_picture full_name rank points wins losses ties cw att")
       .exec();
 
     if (topPlayers.length === 0) {

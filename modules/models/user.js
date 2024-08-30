@@ -19,7 +19,7 @@ const schemaDefinition = new Schema(
 
     role: { type: String, enum: ["Player", "League Organizer"] }, // league_organizer, player
 
-    profile_picture: { type: String, default: "" },
+    profile_picture: { type: String, default: null },
 
     date_of_birth: { type: Date },
 
@@ -29,15 +29,19 @@ const schemaDefinition = new Schema(
 
     sports: [{ type: String }],
 
-    rank: { type: Number },
+    rank: { type: Number, default: 0 },
 
-    points: { type: Number },
+    points: { type: Number, default: 0 },
 
-    wins: { type: Number },
+    wins: { type: Number, default: 0 },
 
-    losses: { type: Number },
+    losses: { type: Number, default: 0},
 
-    ties: { type: Number },
+    ties: { type: Number, default: 0 },
+
+    cw: { type: Number, default: 0 },
+
+    att: { type: Number, default: 0 },
 
     positions: [{ type: String }],
 
