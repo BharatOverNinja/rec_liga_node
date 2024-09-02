@@ -8,6 +8,24 @@ let LeagueModel = require("../models/league"),
   apiResponse = require("../helpers/apiResponse");
 const mongoose = require("mongoose");
 
+let getLeagueSportsList = async (req, res) => {
+  try {
+    const sports = await SportsModel.find({ status: 1 }, { _id: 1, name: 1 });
+
+    return sports;
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      return {
+        errormessage: "Invalid query parameters",
+      };
+    } else {
+      return {
+        errormessage: "Server Error",
+      };
+    }
+  }
+};
+
 let CreateLeague = async (req, res) => {
   try {
     const { name, sport_id, join_privacy, statistics_info } = req.body;
@@ -549,11 +567,12 @@ let PlayerDetail = async (body, req, res) => {
 };
 
 module.exports = {
-  CreateLeague: CreateLeague,
-  LeagueDetail: LeagueDetail,
-  LeagueJoinRequest: LeagueJoinRequest,
-  LeaguePlayersList: LeaguePlayersList,
-  LeaguePlayersListByRating: LeaguePlayersListByRating,
-  ProcessRequest: ProcessRequest,
-  PlayerDetail: PlayerDetail,
+  getLeagueSportsList,
+  CreateLeague,
+  LeagueDetail,
+  LeagueJoinRequest,
+  LeaguePlayersList,
+  LeaguePlayersListByRating,
+  ProcessRequest,
+  PlayerDetail,
 };

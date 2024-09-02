@@ -22,6 +22,6 @@ router.post("/attend_event/:userId", controller.attendEvent); //done
 
 router.get("/leaderboard", controller.getLeaderboard); //done
 
-router.get("/public_leagues", controller.getPublicLeagues); //done
+router.get("/public_leagues/:userId", controller.getPublicLeagues); //done
 
 module.exports = router;

@@ -309,7 +309,7 @@ let getLeagueDetails = async (req, res) => {
 
     // Fetch player details from the users collection
     const players = await User.find({ _id: { $in: playerIds } }).select(
-      "full_name nick_name email phone profile_picture rank points wins losses ties cw att role city date_of_birth sports positions"  
+      "full_name nick_name email phone profile_picture rank points wins losses ties cw att role city date_of_birth sports positions"
     );
 
     // Fetch all events associated with the league
@@ -454,33 +454,33 @@ let attendEvent = async (req, res) => {
   }
 };
 
-let rejectEventRequest = async (playerId, req, res) => {
-  const { eventId } = req.body;
-  try {
-    const event = await Event.findById(eventId);
-    const player = await Player.findById(playerId);
-    if (!player) {
-      return apiResponse.onError(res, "Player not found", 404, false);
-    }
+// let rejectEventRequest = async (playerId, req, res) => {
+//   const { eventId } = req.body;
+//   try {
+//     const event = await Event.findById(eventId);
+//     const player = await Player.findById(playerId);
+//     if (!player) {
+//       return apiResponse.onError(res, "Player not found", 404, false);
+//     }
 
-    if (!player.event_requests.includes(eventId)) {
-      return apiResponse.onError(res, "No event requests!", 404, false);
-    }
+//     if (!player.event_requests.includes(eventId)) {
+//       return apiResponse.onError(res, "No event requests!", 404, false);
+//     }
 
-    player.event_requests.pull(eventId);
+//     player.event_requests.pull(eventId);
 
-    await player.save();
-    return apiResponse.onSuccess(res, "Event request rejected", 200, player);
-  } catch (err) {
-    console.log("err ", err);
-    return apiResponse.onError(
-      res,
-      "An error occurred while rejecting event request.",
-      500,
-      false
-    );
-  }
-};
+//     await player.save();
+//     return apiResponse.onSuccess(res, "Event request rejected", 200, player);
+//   } catch (err) {
+//     console.log("err ", err);
+//     return apiResponse.onError(
+//       res,
+//       "An error occurred while rejecting event request.",
+//       500,
+//       false
+//     );
+//   }
+// };
 
 let getLeaderboard = async (req, res) => {
   try {
@@ -540,20 +540,43 @@ let ratePlayer = async (req, res) => {
   }
 };
 
-let getPublicLeagues = async (req, res) => {
+const getPublicLeagues = async (req, res) => {
   try {
-    const leagues = await League.find({ join_privacy: 1 });
+    const userId = req.params.userId;
 
-    if (leagues.length === 0) {
-      return apiResponse.onSuccess(res, "No public leagues found.", 404, false);
+    // Step 1: Fetch all public leagues with join_privacy = 1
+    const publicLeagues = await League.find({ join_privacy: 1 }).lean();
+
+    // Step 2: Fetch all league IDs where the user has joined
+    const userJoinedLeagues = await LeaguePlayerModel.find({ player_id: userId })
+      .select("league_id")
+      .lean();
+    const userJoinedLeagueIds = userJoinedLeagues.map((lp) =>
+      lp.league_id.toString()
+    );
+
+    // Step 3: Filter out leagues where the user has already joined
+    const leaguesNotJoinedByUser = publicLeagues.filter(
+      (league) => !userJoinedLeagueIds.includes(league._id.toString())
+    );
+
+    // Check if there are any public leagues that the user has not joined
+    if (leaguesNotJoinedByUser.length === 0) {
+      return apiResponse.onSuccess(
+        res,
+        "No public leagues found for this user.",
+        404,
+        false
+      );
     }
 
+    // Step 4: Return the filtered leagues
     return apiResponse.onSuccess(
       res,
       "Public leagues fetched successfully.",
       200,
       true,
-      leagues
+      leaguesNotJoinedByUser
     );
   } catch (err) {
     console.log("Error fetching public leagues: ", err);
@@ -575,7 +598,7 @@ module.exports = {
   getLeagueDetails,
   joinLeague,
   attendEvent,
-  rejectEventRequest,
+  // rejectEventRequest,
   getLeaderboard,
   ratePlayer,
   getPublicLeagues,

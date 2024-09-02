@@ -1,5 +1,9 @@
 let leagueManager = require("../manager/league");
 
+let getLeagueSportsList = (req, res) => {
+  return leagueManager.getLeagueSportsList(req, res);
+};
+
 let CreateLeague = (req, res) => {
   return leagueManager.CreateLeague(req, res);
 };
@@ -28,11 +32,12 @@ let PlayerDetail = (req, res, next) => {
 };
 
 module.exports = {
-  CreateLeague: CreateLeague,
-  LeagueDetail: LeagueDetail,
-  LeagueJoinRequest: LeagueJoinRequest,
-  LeaguePlayersList: LeaguePlayersList,
-  LeaguePlayersListByRating: LeaguePlayersListByRating,
-  ProcessRequest: ProcessRequest,
-  PlayerDetail: PlayerDetail,
+  getLeagueSportsList,
+  CreateLeague,
+  LeagueDetail,
+  LeagueJoinRequest,
+  LeaguePlayersList,
+  LeaguePlayersListByRating,
+  ProcessRequest,
+  PlayerDetail,
 };

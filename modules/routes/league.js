@@ -50,6 +50,8 @@ router.post("/create/:userId", (req, res) => {
   });
 }); //done
 
+router.get("/get_league_sports_list", controller.getLeagueSportsList);
+
 router.get("/league_detail/:league_id", controller.LeagueDetail); //done
 
 router.get("/join_requests/:league_id", controller.LeagueJoinRequest); //done
