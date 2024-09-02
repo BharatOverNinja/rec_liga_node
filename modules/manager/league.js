@@ -10,19 +10,30 @@ const mongoose = require("mongoose");
 
 let getLeagueSportsList = async (req, res) => {
   try {
-    const sports = await SportsModel.find({ status: 1 }, { _id: 1, name: 1 });
+    const sports = await SportsModel.find(
+      { status: 1 },
+      { _id: 1, name: 1 }
+    ).lean();
 
-    return sports;
-  } catch (error) {
-    if (error.name === "ValidationError") {
-      return {
-        errormessage: "Invalid query parameters",
-      };
-    } else {
-      return {
-        errormessage: "Server Error",
-      };
+    if (sports.length === 0) {
+      return apiResponse.onSuccess(res, "No active sports found.", 404, false);
     }
+
+    return apiResponse.onSuccess(
+      res,
+      "Sports list fetched successfully.",
+      200,
+      true,
+      sports
+    );
+  } catch (error) {
+    console.log("Error fetching sports list: ", error);
+    return apiResponse.onError(
+      res,
+      "An error occurred while fetching sports list.",
+      500,
+      false
+    );
   }
 };
 
