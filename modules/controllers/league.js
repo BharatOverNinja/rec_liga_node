@@ -12,8 +12,8 @@ let LeagueDetail = (req, res, next) => {
   return leagueManager.LeagueDetail(req.body, req, res);
 };
 
-let LeagueJoinRequest = (req, res, next) => {
-  return leagueManager.LeagueJoinRequest(req.body, req, res);
+let LeagueJoinRequest = (req, res) => {
+  return leagueManager.LeagueJoinRequest(req, res);
 };
 
 let LeaguePlayersList = (req, res, next) => {

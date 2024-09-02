@@ -81,7 +81,6 @@ let getLeaguesAddedByOrganizer = async (req, res) => {
 let getUpcomingEvents = async (req, res) => {
   try {
     const organizerId = req.params.userId;
-    console.log("userid: ", organizerId);
 
     if (!organizerId) {
       return apiResponse.onSuccess(
@@ -93,7 +92,6 @@ let getUpcomingEvents = async (req, res) => {
     }
 
     const today = new Date();
-    console.log(today);
 
     let events = await Event.find({
       organizer_id: organizerId,
