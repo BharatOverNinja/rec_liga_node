@@ -36,7 +36,7 @@ let organizerDetails = async (body, req, res) => {
   }
 };
 
-let getLeaguesAddedByOrganizer = async ( req, res) => {
+let getLeaguesAddedByOrganizer = async (req, res) => {
   try {
     const userId = req.params.userId;
 
@@ -78,9 +78,10 @@ let getLeaguesAddedByOrganizer = async ( req, res) => {
   }
 };
 
-let getUpcomingEvents = async (body, req, res) => {
+let getUpcomingEvents = async (req, res) => {
   try {
-    const { organizerId } = body;
+    const organizerId = req.params.userId;
+    console.log("userid: ", organizerId);
 
     if (!organizerId) {
       return apiResponse.onSuccess(
@@ -92,10 +93,11 @@ let getUpcomingEvents = async (body, req, res) => {
     }
 
     const today = new Date();
+    console.log(today);
 
     let events = await Event.find({
       organizer_id: organizerId,
-      date: { $gte: today },
+      start_date: { $gte: today },
     });
 
     if (events.length === 0)

@@ -8,8 +8,8 @@ let getLeaguesAddedByOrganizer = (req, res) => {
   return orgManager.getLeaguesAddedByOrganizer( req, res);
 };
 
-let getUpcomingEvents = (req, res, next) => {
-  return orgManager.getUpcomingEvents(req.body, req, res);
+let getUpcomingEvents = (req, res) => {
+  return orgManager.getUpcomingEvents(req, res);
 };
 
 let getPastEvents = (req, res, next) => {
