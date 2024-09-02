@@ -8,8 +8,8 @@ let CreateLeague = (req, res) => {
   return leagueManager.CreateLeague(req, res);
 };
 
-let LeagueDetail = (req, res, next) => {
-  return leagueManager.LeagueDetail(req.body, req, res);
+let LeagueDetail = (req, res) => {
+  return leagueManager.LeagueDetail( req, res);
 };
 
 let LeagueJoinRequest = (req, res) => {

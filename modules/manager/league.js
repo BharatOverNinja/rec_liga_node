@@ -162,9 +162,9 @@ let CreateLeague = async (req, res) => {
   }
 };
 
-let LeagueDetail = async (body, req, res) => {
+let LeagueDetail = async ( req, res) => {
   try {
-    const { league_id } = req.params;
+    const { league_id } = req.body;
 
     // Validate league_id
     if (!league_id || !mongoose.Types.ObjectId.isValid(league_id)) {

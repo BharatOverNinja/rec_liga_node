@@ -52,7 +52,7 @@ router.post("/create/:userId", (req, res) => {
 
 router.get("/get_league_sports_list", controller.getLeagueSportsList);
 
-router.get("/league_detail/:league_id", controller.LeagueDetail); //done
+router.get("/league_detail", controller.LeagueDetail); //done
 
 router.get("/join_requests", controller.LeagueJoinRequest); //done
 
