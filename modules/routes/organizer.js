@@ -4,7 +4,7 @@ let express = require("express"),
 
 router.get("/organizer_profile", controller.organizerDetails); //done
 
-router.get("/leagues_added", controller.getLeaguesAddedByOrganizer); //done
+router.get("/leagues_added/:userId", controller.getLeaguesAddedByOrganizer); //done
 
 router.get("/upcoming_events", controller.getUpcomingEvents); //done
 

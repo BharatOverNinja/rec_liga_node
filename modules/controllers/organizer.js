@@ -4,8 +4,8 @@ let organizerDetails = (req, res, next) => {
   return orgManager.organizerDetails(req.body, req, res);
 };
 
-let getLeaguesAddedByOrganizer = (req, res, next) => {
-  return orgManager.getLeaguesAddedByOrganizer(req.body, req, res);
+let getLeaguesAddedByOrganizer = (req, res) => {
+  return orgManager.getLeaguesAddedByOrganizer( req, res);
 };
 
 let getUpcomingEvents = (req, res, next) => {

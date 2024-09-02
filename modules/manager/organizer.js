@@ -36,9 +36,9 @@ let organizerDetails = async (body, req, res) => {
   }
 };
 
-let getLeaguesAddedByOrganizer = async (body, req, res) => {
+let getLeaguesAddedByOrganizer = async ( req, res) => {
   try {
-    const { userId } = body;
+    const userId = req.params.userId;
 
     if (!userId) {
       return apiResponse.onSuccess(
