@@ -6,6 +6,8 @@ const schemaDefinition = new Schema(
     name: { type: String },
     location: { type: String },
     date: { type: Date },
+    events: [],
+    users: [],
     sport_id: { type: Array },
     organizer_id: { type: mongoose.Schema.Types.ObjectId },
     join_privacy: { type: Number },

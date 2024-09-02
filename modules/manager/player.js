@@ -289,7 +289,7 @@ let getLeagueDetails = async (req, res) => {
     const league = await League.findById(leagueId)
       .populate("events") // Populate the events details
       .populate({
-        path: "players",
+        path: "users",
         select:
           "full_name nick_name email role phone profile_picture rank points wins losses ties cw att",
         model: "users", // Ensure that Mongoose uses the correct model for players
