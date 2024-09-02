@@ -2,6 +2,7 @@
 
 let User = require("../models/user"),
   apiResponse = require("../helpers/apiResponse"),
+  LeaguePlayers = require("../models/league_player"),
   League = require("../models/league"),
   Event = require("../models/event");
 
@@ -49,6 +50,7 @@ let getLeaguesAddedByOrganizer = async (req, res) => {
       );
     }
 
+    // Step 1: Find all leagues added by the organizer
     let leagues = await League.find({ organizer_id: userId });
 
     if (leagues.length === 0) {
@@ -60,12 +62,45 @@ let getLeaguesAddedByOrganizer = async (req, res) => {
       );
     }
 
+    // Step 2: Fetch player count for each league
+    const leagueIds = leagues.map((league) => league._id);
+
+    // Find player counts for each league where status is 2 (Accepted)
+    const playerCounts = await LeaguePlayers.aggregate([
+      {
+        $match: {
+          league_id: { $in: leagueIds },
+          status: 2,
+        },
+      },
+      {
+        $group: {
+          _id: "$league_id",
+          playerCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Step 3: Map player counts to their corresponding leagues
+    const playerCountMap = {};
+    playerCounts.forEach((count) => {
+      playerCountMap[count._id.toString()] = count.playerCount;
+    });
+
+    // Step 4: Append player count to each league
+    const leaguesWithPlayerCount = leagues.map((league) => {
+      return {
+        ...league.toObject(),
+        playerCount: playerCountMap[league._id.toString()] || 0, // Default to 0 if no players found
+      };
+    });
+
     return apiResponse.onSuccess(
       res,
       "Leagues added by organizer fetched successfully.",
       200,
       true,
-      leagues
+      leaguesWithPlayerCount
     );
   } catch (err) {
     console.log("err ", err);
@@ -80,7 +115,7 @@ let getLeaguesAddedByOrganizer = async (req, res) => {
 
 let getUpcomingEvents = async (req, res) => {
   try {
-    const organizerId = req.params.userId;
+    const organizerId = req.params.organizerId;
 
     if (!organizerId) {
       return apiResponse.onSuccess(
@@ -96,7 +131,7 @@ let getUpcomingEvents = async (req, res) => {
     let events = await Event.find({
       organizer_id: organizerId,
       start_date: { $gte: today },
-    });
+    }).sort({ start_date: 1 });
 
     if (events.length === 0)
       return apiResponse.onSuccess(
@@ -124,9 +159,9 @@ let getUpcomingEvents = async (req, res) => {
   }
 };
 
-let getPastEvents = async (body, req, res) => {
+let getPastEvents = async (req, res) => {
   try {
-    const { organizerId } = body;
+    const organizerId = req.params.organizerId;
 
     if (!organizerId) {
       return apiResponse.onSuccess(
@@ -141,8 +176,8 @@ let getPastEvents = async (body, req, res) => {
 
     let events = await Event.find({
       organizer_id: organizerId,
-      date: { $lt: today },
-    }).sort({ date: -1 });
+      end_date: { $lt: today },
+    }).sort({ end_date: -1 });
 
     if (events.length === 0)
       return apiResponse.onSuccess(res, "No past events found.", 404, false);

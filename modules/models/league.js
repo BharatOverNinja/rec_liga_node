@@ -6,13 +6,11 @@ const schemaDefinition = new Schema(
     name: { type: String },
     location: { type: String },
     date: { type: Date },
-    events: [{ type: mongoose.Schema.Types.ObjectId, ref: "events" }],
     sport_id: { type: Array },
     organizer_id: { type: mongoose.Schema.Types.ObjectId },
     join_privacy: { type: Number },
     statistics_info: { type: Array },
-    image: { type: String, default: "" },
-    players: [{ type: mongoose.Schema.Types.ObjectId, ref: "players" }],
+    image: { type: String, default: null },
   },
   { versionKey: false, collection: "leagues", timestamps: true }
 );

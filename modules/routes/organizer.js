@@ -6,9 +6,9 @@ router.get("/organizer_profile", controller.organizerDetails); //done
 
 router.get("/leagues_added/:userId", controller.getLeaguesAddedByOrganizer); //done
 
-router.get("/upcoming_events/:userId", controller.getUpcomingEvents); //done
+router.get("/upcoming_events/:organizerId", controller.getUpcomingEvents); //done
 
-router.get("/past_events", controller.getPastEvents); //done
+router.get("/past_events/:organizerId", controller.getPastEvents); //done
 
 router.get("/event_details", controller.getEventDetails); //done
 

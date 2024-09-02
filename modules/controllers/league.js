@@ -9,7 +9,7 @@ let CreateLeague = (req, res) => {
 };
 
 let LeagueDetail = (req, res) => {
-  return leagueManager.LeagueDetail( req, res);
+  return leagueManager.LeagueDetail(req, res);
 };
 
 let LeagueJoinRequest = (req, res) => {
@@ -20,6 +20,10 @@ let LeaguePlayersList = (req, res) => {
   return leagueManager.LeaguePlayersList(req, res);
 };
 
+let LeagueUpcomingEvents = (req, res) => {
+  return leagueManager.LeagueUpcomingEvents(req, res);
+};
+
 let LeaguePlayersListByRating = (req, res, next) => {
   return leagueManager.LeaguePlayersListByRating(req.body, req, res);
 };
@@ -27,8 +31,8 @@ let ProcessRequest = (req, res, next) => {
   return leagueManager.ProcessRequest(req.body, req, res);
 };
 
-let PlayerDetail = (req, res, next) => {
-  return leagueManager.PlayerDetail(req.body, req, res);
+let PlayerDetail = (req, res) => {
+  return leagueManager.PlayerDetail(req, res);
 };
 
 module.exports = {
@@ -37,6 +41,7 @@ module.exports = {
   LeagueDetail,
   LeagueJoinRequest,
   LeaguePlayersList,
+  LeagueUpcomingEvents,
   LeaguePlayersListByRating,
   ProcessRequest,
   PlayerDetail,

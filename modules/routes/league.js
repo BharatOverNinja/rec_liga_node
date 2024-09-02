@@ -58,9 +58,11 @@ router.get("/join_requests", controller.LeagueJoinRequest); //done
 
 router.get("/players", controller.LeaguePlayersList); //done
 
+router.get("/upcoming_events", controller.LeagueUpcomingEvents); //done
+
 router.post("/process_request", controller.ProcessRequest); //done
 
-router.get("/player_detail/:player_id", controller.PlayerDetail); //done
+router.get("/player_detail", controller.PlayerDetail); //done
 
 router.get(
   "/players_by_rating/:league_id",

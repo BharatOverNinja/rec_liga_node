@@ -4,6 +4,7 @@ let LeagueModel = require("../models/league"),
   SportsModel = require("../models/sports"),
   LeaguePlayerModel = require("../models/league_player"),
   UserModel = require("../models/user"),
+  Event = require("../models/event.js"),
   PointTableModel = require("../models/point_table"),
   apiResponse = require("../helpers/apiResponse");
 const mongoose = require("mongoose");
@@ -162,9 +163,10 @@ let CreateLeague = async (req, res) => {
   }
 };
 
-let LeagueDetail = async ( req, res) => {
+let LeagueDetail = async (req, res) => {
   try {
     const { league_id } = req.body;
+    const today = new Date();
 
     // Validate league_id
     if (!league_id || !mongoose.Types.ObjectId.isValid(league_id)) {
@@ -207,6 +209,13 @@ let LeagueDetail = async ( req, res) => {
       .limit(2)
       .populate("player_id"); // Populate the player_id field
 
+    let upcoming_events = await Event.find({
+      league_id: new mongoose.Types.ObjectId(league_id),
+      start_date: { $gte: today },
+    })
+      .sort({ created_at: -1 }) // Sort in descending order (newest first)
+      .limit(3); // Populate the player_id field
+
     // Total league player counts
     let league_player_count = await LeaguePlayerModel.countDocuments({
       league_id: new mongoose.Types.ObjectId(league_id),
@@ -218,6 +227,7 @@ let LeagueDetail = async ( req, res) => {
       league_player_count: league_player_count,
       request_list: request_list,
       player_list: player_list,
+      upcoming_events: upcoming_events,
     };
 
     return apiResponse.onSuccess(
@@ -288,7 +298,7 @@ let LeagueJoinRequest = async (req, res) => {
   }
 };
 
-let LeaguePlayersList = async ( req, res) => {
+let LeaguePlayersList = async (req, res) => {
   try {
     const { league_id } = req.body;
 
@@ -332,6 +342,55 @@ let LeaguePlayersList = async ( req, res) => {
     return apiResponse.onError(
       res,
       "An error occurred while league player fetching.",
+      500,
+      false
+    );
+  }
+};
+
+let LeagueUpcomingEvents = async (req, res) => {
+  try {
+    const { league_id } = req.body;
+    const today = new Date();
+
+    // Validate league_id
+    if (!league_id || !mongoose.Types.ObjectId.isValid(league_id)) {
+      return apiResponse.onSuccess(
+        res,
+        "Please provide a valid league id.",
+        400,
+        false
+      );
+    }
+
+    // Check if sport exists
+    let league = await LeagueModel.findById(league_id);
+    if (!league) {
+      return apiResponse.onSuccess(
+        res,
+        "Selected league not found.",
+        400,
+        false
+      );
+    }
+
+    let upcoming_events = await Event.find({
+      league_id: new mongoose.Types.ObjectId(league_id),
+      start_date: { $gte: today },
+    }).sort({ created_at: -1 });
+
+    return apiResponse.onSuccess(
+      res,
+      "Events fetched successfully.",
+      200,
+      true,
+      upcoming_events
+    );
+  } catch (error) {
+    console.log("err ", error);
+    return apiResponse.onError(
+      res,
+      "An error occurred while fetching events.",
       500,
       false
     );
@@ -516,9 +575,9 @@ let ProcessRequest = async (body, req, res) => {
   }
 };
 
-let PlayerDetail = async (body, req, res) => {
+let PlayerDetail = async (req, res) => {
   try {
-    const { player_id } = req.params;
+    const { player_id } = req.body;
 
     // Validate player_id
     if (!player_id || !mongoose.Types.ObjectId.isValid(player_id)) {
@@ -583,6 +642,7 @@ module.exports = {
   LeagueDetail,
   LeagueJoinRequest,
   LeaguePlayersList,
+  LeagueUpcomingEvents,
   LeaguePlayersListByRating,
   ProcessRequest,
   PlayerDetail,
