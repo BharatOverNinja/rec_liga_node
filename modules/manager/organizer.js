@@ -128,18 +128,26 @@ let getUpcomingEvents = async (req, res) => {
 
     const today = new Date();
 
+    // Step 1: Fetch upcoming events with league details
     let events = await Event.find({
       organizer_id: organizerId,
       start_date: { $gte: today },
-    }).sort({ start_date: 1 });
+    })
+      .sort({ start_date: 1 })
+      .populate({
+        path: "league_id", // Field to populate
+        select:
+          "name location date sport_id join_privacy statistics_info image", // Fields to return from League model
+      });
 
-    if (events.length === 0)
+    if (events.length === 0) {
       return apiResponse.onSuccess(
         res,
         "No upcoming events found.",
         404,
         false
       );
+    }
 
     return apiResponse.onSuccess(
       res,
