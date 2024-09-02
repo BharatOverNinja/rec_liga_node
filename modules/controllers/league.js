@@ -16,8 +16,8 @@ let LeagueJoinRequest = (req, res) => {
   return leagueManager.LeagueJoinRequest(req, res);
 };
 
-let LeaguePlayersList = (req, res, next) => {
-  return leagueManager.LeaguePlayersList(req.body, req, res);
+let LeaguePlayersList = (req, res) => {
+  return leagueManager.LeaguePlayersList(req, res);
 };
 
 let LeaguePlayersListByRating = (req, res, next) => {

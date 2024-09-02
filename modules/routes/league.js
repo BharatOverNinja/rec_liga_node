@@ -56,7 +56,7 @@ router.get("/league_detail/:league_id", controller.LeagueDetail); //done
 
 router.get("/join_requests", controller.LeagueJoinRequest); //done
 
-router.get("/players/:league_id", controller.LeaguePlayersList); //done
+router.get("/players", controller.LeaguePlayersList); //done
 
 router.post("/process_request", controller.ProcessRequest); //done
 
