@@ -198,7 +198,6 @@ let getPastEventsWhereResultHasUploaded = async (req, res) => {
 
     let eventsWithDetails = await Promise.all(
       events.map(async (event) => {
-        
         let teams = await Team.find({ event_id: event._id });
         // Fetch player details for each team
         let teamsWithPlayers = await Promise.all(
@@ -223,7 +222,6 @@ let getPastEventsWhereResultHasUploaded = async (req, res) => {
         };
       })
     );
-
 
     return apiResponse.onSuccess(
       res,
@@ -284,7 +282,6 @@ let getPastEventsWhereResultNotUploaded = async (req, res) => {
     // Fetch associated team details and player details for each event
     let eventsWithDetails = await Promise.all(
       events.map(async (event) => {
-        
         let teams = await Team.find({ event_id: event._id });
         // Fetch player details for each team
         let teamsWithPlayers = await Promise.all(
@@ -336,18 +333,45 @@ let getEventDetails = async (req, res) => {
       return apiResponse.onSuccess(res, "Event ID is required.", 400, false);
     }
 
+    // Fetch the event details
     let event = await Event.findOne({ _id: eventId });
 
     if (!event) {
       return apiResponse.onSuccess(res, "Event not found.", 404, false);
     }
 
+    // Fetch the teams associated with the event
+    let teams = await Team.find({ event_id: event._id });
+
+    // Fetch the players for each team
+    let teamsWithPlayers = await Promise.all(
+      teams.map(async (team) => {
+        let players = await AttendEvent.find({
+          team_id: team._id,
+          selection_status: 2,
+        }) // Only fetch accepted players
+          .populate("user_id", "full_name positions profile_picture")
+          .exec();
+
+        return {
+          team,
+          players,
+        };
+      })
+    );
+
+    // Include the teams and players in the event details
+    let eventDetails = {
+      ...event._doc, // Spread the event document details
+      teams: teamsWithPlayers,
+    };
+
     return apiResponse.onSuccess(
       res,
       "Event details fetched successfully.",
       200,
       true,
-      event
+      eventDetails
     );
   } catch (err) {
     console.log("err ", err);

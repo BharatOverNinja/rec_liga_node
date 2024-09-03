@@ -15,6 +15,7 @@ const schemaDefinition = new Schema(
     end_date: { type: Date },
     repeat_event: { type: String },
     rsvp_deadline: { type: Date },
+    is_team_drafted: { type: Boolean, default: false },
     result: { type: String },
     team_a_score: { type: String },
     team_b_score: { type: String },
