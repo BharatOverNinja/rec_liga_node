@@ -193,12 +193,14 @@ let getPastEventsWhereResultHasUploaded = async (req, res) => {
       team_b_score: { $exists: true, $ne: "" }, // Check if 'team_b_score' exists and is not empty
     }).sort({ end_date: -1 });
 
-    if (events.length === 0)
+    if (events.length === 0) {
       return apiResponse.onSuccess(res, "No past events found.", 404, false);
+    }
 
     let eventsWithDetails = await Promise.all(
       events.map(async (event) => {
         let teams = await Team.find({ event_id: event._id });
+
         // Fetch player details for each team
         let teamsWithPlayers = await Promise.all(
           teams.map(async (team) => {
@@ -206,12 +208,15 @@ let getPastEventsWhereResultHasUploaded = async (req, res) => {
               team_id: team._id,
               selection_status: 2,
             }) // Only fetch accepted players
-              .populate("user_id", "full_name positions")
+              .populate("user_id", "full_name positions profile_picture") // Populate user details
               .exec();
+
+            // Extract player user details in the correct format
+            let formattedPlayers = players.map((player) => player.user_id);
 
             return {
               team,
-              players,
+              players: formattedPlayers,
             };
           })
         );
@@ -240,6 +245,7 @@ let getPastEventsWhereResultHasUploaded = async (req, res) => {
     );
   }
 };
+
 
 let getPastEventsWhereResultNotUploaded = async (req, res) => {
   try {
@@ -290,12 +296,14 @@ let getPastEventsWhereResultNotUploaded = async (req, res) => {
               team_id: team._id,
               selection_status: 2,
             }) // Only fetch accepted players
-              .populate("user_id", "full_name positions")
+              .populate("user_id", "full_name positions profile_picture")
               .exec();
+
+              let formattedPlayers = players.map((player) => player.user_id);
 
             return {
               team,
-              players,
+              players: formattedPlayers,
             };
           })
         );
