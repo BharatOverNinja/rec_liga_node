@@ -24,8 +24,8 @@ let getEventDetails = (req, res) => {
   return orgManager.getEventDetails(req, res);
 };
 
-let getPastEventResults = (req, res) => {
-  return orgManager.getPastEventResults(req, res);
+let organizerDraftTeam = (req, res) => {
+  return orgManager.organizerDraftTeam(req, res);
 };
 
 let uploadEventResult = (req, res) => {
@@ -39,6 +39,6 @@ module.exports = {
   getPastEventsWhereResultHasUploaded,
   getPastEventsWhereResultNotUploaded,
   getEventDetails,
-  getPastEventResults,
+  organizerDraftTeam,
   uploadEventResult,
 };

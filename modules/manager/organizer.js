@@ -384,27 +384,47 @@ let getEventDetails = async (req, res) => {
   }
 };
 
-let getPastEventResults = async (req, res) => {
+let organizerDraftTeam = async (req, res) => {
   try {
-    const today = new Date();
+    const { eventId } = req.body;
 
-    let events = await Event.find({
-      end_date: { $lt: today },
-      result: { $exists: true, $ne: "" },
-    });
+    if (!eventId) {
+      return apiResponse.onSuccess(res, "Event ID is required.", 400, false);
+    }
+
+    // Fetch the event details
+    let event = await Event.findOne({ _id: eventId });
+
+    if (!event) {
+      return apiResponse.onSuccess(res, "Event not found.", 404, false);
+    }
+
+    // Fetch all players associated with the event where selection_status is 1
+    let players = await AttendEvent.find({
+      event_id: event._id,
+      selection_status: 1,
+    })
+      .populate("user_id", "full_name positions profile_picture")
+      .exec();
+
+    // Prepare the event details with players
+    let eventDetails = {
+      ...event._doc, // Spread the event document details
+      players: players.map((player) => player.user_id), // Extract player user details
+    };
 
     return apiResponse.onSuccess(
       res,
-      "Past event results fetched successfully.",
+      "Event details and players fetched successfully.",
       200,
       true,
-      events
+      eventDetails
     );
   } catch (err) {
     console.log("err ", err);
     return apiResponse.onError(
       res,
-      "An error occurred while fetching past event results.",
+      "An error occurred while fetching event details.",
       500,
       false
     );
@@ -488,6 +508,6 @@ module.exports = {
   getPastEventsWhereResultHasUploaded,
   getPastEventsWhereResultNotUploaded,
   getEventDetails,
-  getPastEventResults,
+  organizerDraftTeam,
   uploadEventResult,
 };

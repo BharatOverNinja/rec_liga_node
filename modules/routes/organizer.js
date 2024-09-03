@@ -14,8 +14,8 @@ router.get("/past_events_without_results/:organizerId", controller.getPastEvents
 
 router.get("/event_details", controller.getEventDetails); //done
 
-router.post("/upload_event_result", controller.uploadEventResult); //done
+router.get("/draft_team", controller.organizerDraftTeam); //done
 
-router.get("/past_event_results", controller.getPastEventResults); //done
+router.post("/upload_event_result", controller.uploadEventResult); //done
 
 module.exports = router;
