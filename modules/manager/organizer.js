@@ -196,12 +196,41 @@ let getPastEventsWhereResultHasUploaded = async (req, res) => {
     if (events.length === 0)
       return apiResponse.onSuccess(res, "No past events found.", 404, false);
 
+    let eventsWithDetails = await Promise.all(
+      events.map(async (event) => {
+        
+        let teams = await Team.find({ event_id: event._id });
+        // Fetch player details for each team
+        let teamsWithPlayers = await Promise.all(
+          teams.map(async (team) => {
+            let players = await AttendEvent.find({
+              team_id: team._id,
+              selection_status: 2,
+            }) // Only fetch accepted players
+              .populate("user_id", "full_name positions")
+              .exec();
+
+            return {
+              team,
+              players,
+            };
+          })
+        );
+
+        return {
+          event,
+          teams: teamsWithPlayers,
+        };
+      })
+    );
+
+
     return apiResponse.onSuccess(
       res,
       "Events fetched successfully.",
       200,
       true,
-      events
+      eventsWithDetails
     );
   } catch (err) {
     console.log("err ", err);
@@ -255,9 +284,8 @@ let getPastEventsWhereResultNotUploaded = async (req, res) => {
     // Fetch associated team details and player details for each event
     let eventsWithDetails = await Promise.all(
       events.map(async (event) => {
-        console.log(event._id, "event Id")
+        
         let teams = await Team.find({ event_id: event._id });
-
         // Fetch player details for each team
         let teamsWithPlayers = await Promise.all(
           teams.map(async (team) => {
