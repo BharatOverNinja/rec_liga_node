@@ -278,6 +278,7 @@ let ChooseCaptain = async (body, req, res) => {
       200,
       true
     );
+
   } catch (err) {
     console.log("err ", err);
     return apiResponse.onError(
@@ -427,6 +428,7 @@ let CreateTeam = async (body, req, res) => {
           user_id: id,
           event_id: event_id,
         });
+        
         if (updateAttendance) {
           updateAttendance.team_id = created_team._id;
           updateAttendance.selection_status = 2;

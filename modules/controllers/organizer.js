@@ -12,8 +12,12 @@ let getUpcomingEvents = (req, res) => {
   return orgManager.getUpcomingEvents(req, res);
 };
 
-let getPastEvents = (req, res) => {
-  return orgManager.getPastEvents(req, res);
+let getPastEventsWhereResultHasUploaded = (req, res) => {
+  return orgManager.getPastEventsWhereResultHasUploaded(req, res);
+};
+
+let getPastEventsWhereResultNotUploaded = (req, res) => {
+  return orgManager.getPastEventsWhereResultNotUploaded(req, res);
 };
 
 let getEventDetails = (req, res) => {
@@ -32,7 +36,8 @@ module.exports = {
   organizerDetails,
   getLeaguesAddedByOrganizer,
   getUpcomingEvents,
-  getPastEvents,
+  getPastEventsWhereResultHasUploaded,
+  getPastEventsWhereResultNotUploaded,
   getEventDetails,
   getPastEventResults,
   uploadEventResult,

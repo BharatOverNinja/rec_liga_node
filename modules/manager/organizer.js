@@ -4,11 +4,13 @@ let User = require("../models/user"),
   apiResponse = require("../helpers/apiResponse"),
   LeaguePlayers = require("../models/league_player"),
   League = require("../models/league"),
+  Team = require("../models/team"),
+  AttendEvent = require("../models/attend_event"),
   Event = require("../models/event");
 
-let organizerDetails = async (body, req, res) => {
+let organizerDetails = async (req, res) => {
   try {
-    const { userId } = body;
+    const { userId } = req.body;
 
     if (!userId) {
       return apiResponse.onSuccess(res, "User ID is required.", 400, false);
@@ -167,7 +169,7 @@ let getUpcomingEvents = async (req, res) => {
   }
 };
 
-let getPastEvents = async (req, res) => {
+let getPastEventsWhereResultHasUploaded = async (req, res) => {
   try {
     const organizerId = req.params.organizerId;
 
@@ -182,9 +184,13 @@ let getPastEvents = async (req, res) => {
 
     const today = new Date();
 
+    // Query for fetching past events where result, team_a_score, and team_b_score exist
     let events = await Event.find({
       organizer_id: organizerId,
       end_date: { $lt: today },
+      result: { $exists: true, $ne: "" }, // Check if 'result' exists and is not empty
+      team_a_score: { $exists: true, $ne: "" }, // Check if 'team_a_score' exists and is not empty
+      team_b_score: { $exists: true, $ne: "" }, // Check if 'team_b_score' exists and is not empty
     }).sort({ end_date: -1 });
 
     if (events.length === 0)
@@ -208,9 +214,95 @@ let getPastEvents = async (req, res) => {
   }
 };
 
-let getEventDetails = async (body, req, res) => {
+let getPastEventsWhereResultNotUploaded = async (req, res) => {
   try {
-    const { eventId } = body;
+    const organizerId = req.params.organizerId;
+
+    if (!organizerId) {
+      return apiResponse.onSuccess(
+        res,
+        "Organizer ID is required.",
+        400,
+        false
+      );
+    }
+
+    const today = new Date();
+
+    // Fetch past events where result, team_a_score, and team_b_score are not uploaded
+    let events = await Event.find({
+      organizer_id: organizerId,
+      end_date: { $lt: today },
+      $or: [
+        { result: { $exists: false } }, // Check if 'result' does not exist
+        { result: "" }, // Check if 'result' is an empty string
+        { team_a_score: { $exists: false } }, // Check if 'team_a_score' does not exist
+        { team_a_score: "" }, // Check if 'team_a_score' is an empty string
+        { team_b_score: { $exists: false } }, // Check if 'team_b_score' does not exist
+        { team_b_score: "" }, // Check if 'team_b_score' is an empty string
+      ],
+    }).sort({ end_date: -1 });
+
+    if (events.length === 0) {
+      return apiResponse.onSuccess(
+        res,
+        "No past events found where result has not been uploaded.",
+        404,
+        false
+      );
+    }
+
+    // Fetch associated team details and player details for each event
+    let eventsWithDetails = await Promise.all(
+      events.map(async (event) => {
+        console.log(event._id, "event Id")
+        let teams = await Team.find({ event_id: event._id });
+
+        // Fetch player details for each team
+        let teamsWithPlayers = await Promise.all(
+          teams.map(async (team) => {
+            let players = await AttendEvent.find({
+              team_id: team._id,
+              selection_status: 2,
+            }) // Only fetch accepted players
+              .populate("user_id", "full_name positions")
+              .exec();
+
+            return {
+              team,
+              players,
+            };
+          })
+        );
+
+        return {
+          event,
+          teams: teamsWithPlayers,
+        };
+      })
+    );
+
+    return apiResponse.onSuccess(
+      res,
+      "Events with team and player details fetched successfully.",
+      200,
+      true,
+      eventsWithDetails
+    );
+  } catch (err) {
+    console.log("err ", err);
+    return apiResponse.onError(
+      res,
+      "An error occurred while fetching events with details.",
+      500,
+      false
+    );
+  }
+};
+
+let getEventDetails = async (req, res) => {
+  try {
+    const { eventId } = req.body;
 
     if (!eventId) {
       return apiResponse.onSuccess(res, "Event ID is required.", 400, false);
@@ -267,23 +359,47 @@ let getPastEventResults = async (req, res) => {
   }
 };
 
-let uploadEventResult = async (body, req, res) => {
+let uploadEventResult = async (req, res) => {
   try {
-    const { leagueId, eventId, ...updatedEventData } = body;
+    const { eventId, result, team_a_score, team_b_score } = req.body;
 
-    if (!leagueId || !eventId) {
+    if (!eventId) {
+      return apiResponse.onSuccess(res, "Event ID is required.", 400, false);
+    }
+
+    if (!result) {
+      return apiResponse.onSuccess(res, "Result is required.", 400, false);
+    }
+
+    if (!team_a_score) {
       return apiResponse.onSuccess(
         res,
-        "League ID and Event ID are required.",
+        "team_a_score is required.",
         400,
         false
       );
     }
 
+    if (!team_b_score) {
+      return apiResponse.onSuccess(
+        res,
+        "team_b_score is required.",
+        400,
+        false
+      );
+    }
+
+    const updatedEventData = {
+      result,
+      team_a_score,
+      team_b_score,
+    };
+
+    // Find the event by ID and update the result fields
     let updatedEvent = await Event.findOneAndUpdate(
-      { _id: eventId, league_id: leagueId },
+      { _id: eventId },
       updatedEventData,
-      { new: true }
+      { new: true } // Return the updated document
     );
 
     if (!updatedEvent) {
@@ -314,11 +430,12 @@ let uploadEventResult = async (body, req, res) => {
 };
 
 module.exports = {
-  organizerDetails: organizerDetails,
-  getLeaguesAddedByOrganizer: getLeaguesAddedByOrganizer,
-  getUpcomingEvents: getUpcomingEvents,
-  getPastEvents: getPastEvents,
-  getEventDetails: getEventDetails,
-  getPastEventResults: getPastEventResults,
-  uploadEventResult: uploadEventResult,
+  organizerDetails,
+  getLeaguesAddedByOrganizer,
+  getUpcomingEvents,
+  getPastEventsWhereResultHasUploaded,
+  getPastEventsWhereResultNotUploaded,
+  getEventDetails,
+  getPastEventResults,
+  uploadEventResult,
 };

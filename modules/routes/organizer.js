@@ -8,7 +8,9 @@ router.get("/leagues_added/:userId", controller.getLeaguesAddedByOrganizer); //d
 
 router.get("/upcoming_events/:organizerId", controller.getUpcomingEvents); //done
 
-router.get("/past_events/:organizerId", controller.getPastEvents); //done
+router.get("/past_events_with_results/:organizerId", controller.getPastEventsWhereResultHasUploaded);
+
+router.get("/past_events_without_results/:organizerId", controller.getPastEventsWhereResultNotUploaded);
 
 router.get("/event_details", controller.getEventDetails); //done
 
