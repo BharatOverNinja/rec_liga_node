@@ -25,8 +25,6 @@ const schemaDefinition = new Schema(
 
     city: { type: String },
 
-    // sports: [{ type: mongoose.Schema.Types.ObjectId, ref: "sports" }],
-
     sports: [{ type: String }],
 
     rank: { type: Number, default: 0 },

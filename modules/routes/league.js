@@ -6,10 +6,9 @@ const multer = require("multer");
 const path = require("path");
 const controller = require("../controllers/league");
 
-// Set up storage for multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/league/"); // Specify the destination folder
+    cb(null, "uploads/league/");
   },
   filename: function (req, file, cb) {
     cb(
@@ -19,7 +18,6 @@ const storage = multer.diskStorage({
   },
 });
 
-// Initialize multer to handle file uploads
 const upload = multer({
   storage: storage,
   fileFilter: function (req, file, cb) {
@@ -42,13 +40,11 @@ router.post("/create/:userId", (req, res) => {
     if (err) {
       return res.status(400).json({ message: err });
     }
-
-    console.log("req.body: ", req.body);
-    console.log("req.file: ", req.file);
-
     controller.CreateLeague(req, res);
   });
-}); //done
+});
+
+module.exports = router;
 
 router.get("/get_league_sports_list", controller.getLeagueSportsList);
 

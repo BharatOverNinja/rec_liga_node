@@ -10,23 +10,21 @@ let LeagueModel = require("../models/league"),
   apiResponse = require("../helpers/apiResponse");
 const mongoose = require("mongoose");
 
-let CreateEvent = async (body, req, res) => {
+let CreateEvent = async (req, res) => {
   try {
     const {
       league_id,
-      sport_id,
       title,
       date,
       location,
-      total_teams,
+      // total_teams,
       players_count,
-      start_date,
-      end_date,
+      start_time,
+      end_time,
       repeat_event,
-      rvsp_deadline,
-    } = body;
+      // rvsp_deadline,
+    } = req.body;
 
-    // Validate league_id
     if (!league_id || !mongoose.Types.ObjectId.isValid(league_id)) {
       return apiResponse.onSuccess(
         res,
@@ -35,8 +33,32 @@ let CreateEvent = async (body, req, res) => {
         false
       );
     }
+    if (!title)
+      return apiResponse.onSuccess(res, "Title is required.", 400, false);
+    if (!date)
+      return apiResponse.onSuccess(res, "Date is required.", 400, false);
+    if (!location)
+      return apiResponse.onSuccess(res, "Location is required.", 400, false);
+    if (!players_count)
+      return apiResponse.onSuccess(
+        res,
+        "Players count is required.",
+        400,
+        false
+      );
+    if (!start_time)
+      return apiResponse.onSuccess(res, "Start time is required.", 400, false);
+    if (!end_time)
+      return apiResponse.onSuccess(res, "End time is required.", 400, false);
+    if (!repeat_event || !["every_day", "one_time"].includes(repeat_event)) {
+      return apiResponse.onSuccess(
+        res,
+        "Please enter a valid repeat_event value.",
+        400,
+        false
+      );
+    }
 
-    // Check if sport exists
     const league = await LeagueModel.findById(league_id);
     if (!league) {
       return apiResponse.onSuccess(
@@ -47,87 +69,18 @@ let CreateEvent = async (body, req, res) => {
       );
     }
 
-    if (!league.sport_id.includes(sport_id)) {
-      return apiResponse.onSuccess(
-        res,
-        "Selected sport is not found in league.",
-        400,
-        false
-      );
-    }
+    const adjustedPlayersCount = Number(players_count) * 2;
 
-    // Validate name
-    if (!title) {
-      return apiResponse.onSuccess(res, "title is required.", 400, false);
-    }
-
-    // Validate name
-    if (!date) {
-      return apiResponse.onSuccess(res, "date is required.", 400, false);
-    }
-
-    // Validate name
-    if (!location) {
-      return apiResponse.onSuccess(res, "location is required.", 400, false);
-    }
-
-    // Validate name
-    if (!players_count) {
-      return apiResponse.onSuccess(
-        res,
-        "players_count is required.",
-        400,
-        false
-      );
-    }
-
-    // Validate name
-    if (!start_date) {
-      return apiResponse.onSuccess(res, "start_date is required.", 400, false);
-    }
-
-    // Validate name
-    if (!end_date) {
-      return apiResponse.onSuccess(res, "end_date is required.", 400, false);
-    }
-
-    // Validate name
-    if (
-      !repeat_event ||
-      (repeat_event && !["every_day", "one_time"].includes(repeat_event))
-    ) {
-      return apiResponse.onSuccess(
-        res,
-        "Please enter valid repeat_event value.",
-        400,
-        false
-      );
-    }
-
-    // Validate name
-    if (!rvsp_deadline) {
-      return apiResponse.onSuccess(
-        res,
-        "rvsp_deadline is required.",
-        400,
-        false
-      );
-    }
-
-    // Create league data
-    let createEventData = {
+    const createEventData = {
       organizer_id: league.organizer_id,
-      sport_id: new mongoose.Types.ObjectId(sport_id),
-      league_id: new mongoose.Types.ObjectId(league._id), // Set this to the appropriate value
-      title: title,
-      date: date,
-      location: location,
-      total_teams: total_teams,
-      players_count: players_count,
-      start_date: new Date(start_date),
-      end_date: new Date(end_date),
-      repeat_event: repeat_event,
-      rvsp_deadline: new Date(rvsp_deadline),
+      league_id: league._id,
+      title,
+      date,
+      location,
+      players_count: adjustedPlayersCount,
+      start_time: new Date(start_time),
+      end_time: new Date(end_time),
+      repeat_event,
     };
 
     await EventModel.create(createEventData);
@@ -144,9 +97,9 @@ let CreateEvent = async (body, req, res) => {
   }
 };
 
-let SportsList = async (body, req, res) => {
+let SportsList = async (req, res) => {
   try {
-    const { league_id } = body;
+    const { league_id } = req.body;
 
     // Validate league_id
     if (!league_id || !mongoose.Types.ObjectId.isValid(league_id)) {
@@ -191,9 +144,9 @@ let SportsList = async (body, req, res) => {
   }
 };
 
-let ChooseCaptain = async (body, req, res) => {
+let ChooseCaptain = async (req, res) => {
   try {
-    const { event_id, user_id } = body;
+    const { event_id, user_id } = req.body;
 
     // Validate event_id
     if (!event_id || !mongoose.Types.ObjectId.isValid(event_id)) {
@@ -289,9 +242,10 @@ let ChooseCaptain = async (body, req, res) => {
   }
 };
 
-let CreateTeam = async (body, req, res) => {
+let CreateTeam = async (req, res) => {
   try {
-    const { event_id, player_id, captain_id, team_name, shirt_color } = body;
+    const { event_id, player_id, captain_id, team_name, shirt_color } =
+      req.body;
 
     // Validate event_id
     if (!event_id || !mongoose.Types.ObjectId.isValid(event_id)) {
@@ -460,10 +414,10 @@ let CreateTeam = async (body, req, res) => {
   }
 };
 
-let UpdateTeam = async (body, req, res) => {
+let UpdateTeam = async (req, res) => {
   try {
     const { team_id } = req.params;
-    const { player_id, team_name, shirt_color, remove_player } = body;
+    const { player_id, team_name, shirt_color, remove_player } = req.body;
 
     // Validate team_id
     if (!team_id || !mongoose.Types.ObjectId.isValid(team_id)) {
@@ -595,7 +549,7 @@ let UpdateTeam = async (body, req, res) => {
   }
 };
 
-let GetTeam = async (body, req, res) => {
+let GetTeam = async (req, res) => {
   try {
     const { event_id } = req.params;
 

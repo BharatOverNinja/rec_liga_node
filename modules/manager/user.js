@@ -3,6 +3,7 @@
 let SportsModel = require("../models/sports"),
   User = require("../models/user"),
   jwt = require("jsonwebtoken"),
+  mongoose = require("mongoose"),
   apiResponse = require("../helpers/apiResponse");
 
 let storeRegistrationData = async (body, req, res) => {
@@ -83,9 +84,13 @@ let getCurrentUserDetails = async (req, res) => {
 };
 
 let updateUser = async (req, res) => {
-  console.log(req.body);
   const { full_name, nick_name, email, phone, date_of_birth, city, sports, positions } = req.body;
   const userId = req.params.userId;
+
+  // Validate User ID
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return apiResponse.onError(res, "Invalid user ID", 400);
+  }
 
   try {
     const user = await User.findById(userId);
@@ -93,13 +98,14 @@ let updateUser = async (req, res) => {
       return apiResponse.onError(res, "User not found", 404);
     }
 
-    let profile_image = user.profile_picture;
-    if (req.file && req.file.filename) {
-      profile_image = "/uploads/user/" + req.file.filename;
-    }
+    // Handle file upload
+    let fileName = req.file
+      ? `http://3.83.218.53/uploads/user/${req.file.filename}`
+      : user.profile_picture;
 
+    // Prepare updates
     const updates = {
-      profile_picture: profile_image,
+      profile_picture: fileName,
       full_name,
       nick_name,
       email,
@@ -110,6 +116,7 @@ let updateUser = async (req, res) => {
       positions,
     };
 
+    // Apply updates to user object
     Object.entries(updates).forEach(([key, value]) => {
       if (value !== undefined && value !== "") {
         user[key] = value;
@@ -134,6 +141,7 @@ let updateUser = async (req, res) => {
     );
   }
 };
+
 
 let deleteAccount = async (req, res) => {
   try {

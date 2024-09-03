@@ -246,7 +246,6 @@ let getPastEventsWhereResultHasUploaded = async (req, res) => {
   }
 };
 
-
 let getPastEventsWhereResultNotUploaded = async (req, res) => {
   try {
     const organizerId = req.params.organizerId;
@@ -299,7 +298,7 @@ let getPastEventsWhereResultNotUploaded = async (req, res) => {
               .populate("user_id", "full_name positions profile_picture")
               .exec();
 
-              let formattedPlayers = players.map((player) => player.user_id);
+            let formattedPlayers = players.map((player) => player.user_id);
 
             return {
               team,

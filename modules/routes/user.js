@@ -18,35 +18,33 @@ const storage = multer.diskStorage({
   },
 });
 
-const fileFilter = function (req, file, cb) {
-  const fileTypes = /jpeg|jpg|png/;
-  const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = fileTypes.test(file.mimetype);
-
-  if (mimetype && extname) {
-    return cb(null, true);
-  } else {
-    cb(new Error("Error: Only images (jpeg, jpg, png) are allowed!"));
-  }
-};
-
 const upload = multer({
   storage: storage,
-  fileFilter: fileFilter,
+  fileFilter: function (req, file, cb) {
+    const fileTypes = /jpeg|jpg|png/;
+    const extname = fileTypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
+    const mimetype = fileTypes.test(file.mimetype);
+
+    if (mimetype && extname) {
+      return cb(null, true);
+    } else {
+      cb("Error: Images Only!");
+    }
+  },
 }).single("profile_picture");
 
-router.post("/store_registration_data", controller.storeRegistrationData); //done
+router.post("/store_registration_data", controller.storeRegistrationData);
 
-router.post("/update_user/:userId", (req, res, next) => {
+router.post("/update_user/:userId", (req, res) => {
   upload(req, res, function (err) {
     if (err) {
-      // Handle Multer error (e.g., invalid file type)
-      return res.status(400).send({ error: err.message });
+      return res.status(400).json({ message: err });
     }
-    console.log(req.body); // Check if req.body is being populated
     controller.updateUser(req, res);
   });
-}); //done
+});
 
 router.get(
   "/get_current_user_details/:email",
