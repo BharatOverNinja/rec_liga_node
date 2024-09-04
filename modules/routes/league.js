@@ -48,17 +48,17 @@ module.exports = router;
 
 router.get("/get_league_sports_list", controller.getLeagueSportsList);
 
-router.get("/league_detail", controller.LeagueDetail); //done
+router.get("/league_detail", controller.LeagueDetail);
 
-router.get("/join_requests", controller.LeagueJoinRequest); //done
+router.get("/join_requests", controller.LeagueJoinRequest);
 
-router.get("/players", controller.LeaguePlayersList); //done
+router.get("/players", controller.LeaguePlayersList);
 
-router.get("/upcoming_events", controller.LeagueUpcomingEvents); //done
+router.get("/upcoming_events", controller.LeagueUpcomingEvents);
 
-router.post("/process_request", controller.ProcessRequest); //done
+router.post("/process_request", controller.ProcessRequest);
 
-router.get("/player_detail", controller.PlayerDetail); //done
+router.get("/player_detail", controller.PlayerDetail);
 
 router.get(
   "/players_by_rating/:league_id",

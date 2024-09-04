@@ -6,8 +6,8 @@ let SportsModel = require("../models/sports"),
   mongoose = require("mongoose"),
   apiResponse = require("../helpers/apiResponse");
 
-let storeRegistrationData = async (body, req, res) => {
-  const { full_name, email, phone, role } = body;
+let storeRegistrationData = async (req, res) => {
+  const { full_name, email, phone, role } = req.body;
 
   try {
     let user = await User.findOne({ email });
@@ -47,7 +47,7 @@ let storeRegistrationData = async (body, req, res) => {
   }
 };
 
-let SportsList = async (body, req, res) => {
+let SportsList = async (res) => {
   try {
     const sports_list = await SportsModel.find({ status: 1 });
     return apiResponse.onSuccess(
@@ -66,7 +66,7 @@ let getCurrentUserDetails = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.params.email });
     console.log("user", user);
-    
+
     if (!user) {
       return apiResponse.onError(res, "User not found", 400);
     }
@@ -84,7 +84,16 @@ let getCurrentUserDetails = async (req, res) => {
 };
 
 let updateUser = async (req, res) => {
-  const { full_name, nick_name, email, phone, date_of_birth, city, sports, positions } = req.body;
+  const {
+    full_name,
+    nick_name,
+    email,
+    phone,
+    date_of_birth,
+    city,
+    sports,
+    positions,
+  } = req.body;
   const userId = req.params.userId;
 
   // Validate User ID
@@ -141,7 +150,6 @@ let updateUser = async (req, res) => {
     );
   }
 };
-
 
 let deleteAccount = async (req, res) => {
   try {

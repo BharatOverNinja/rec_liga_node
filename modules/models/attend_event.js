@@ -10,8 +10,8 @@ const schemaDefinition = new Schema(
     is_captain: { type: Boolean },
     team_id: { type: mongoose.Schema.Types.ObjectId, ref: 'teams' },
     is_attended: { type: Boolean },
-    start_date: { type: Date },
-    end_date: { type: Date },
+    start_time: { type: Date },
+    end_time: { type: Date },
   },
   { versionKey: false, collection: "attend_event", timestamps: true }
 );

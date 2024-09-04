@@ -1,11 +1,11 @@
 let userManager = require("../manager/user");
 
 let storeRegistrationData = (req, res) => {
-  return userManager.storeRegistrationData(req.body, req, res);
+  return userManager.storeRegistrationData(req, res);
 };
 
 let SportsList = (req, res) => {
-  return userManager.SportsList(req.body, req, res);
+  return userManager.SportsList(req, res);
 };
 
 let getCurrentUserDetails = (req, res) => {

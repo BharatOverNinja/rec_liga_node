@@ -242,13 +242,186 @@ let ChooseCaptain = async (req, res) => {
   }
 };
 
+// let CreateTeam = async (req, res) => {
+//   try {
+//     const { event_id, player_id, captain_id, team_name, shirt_color } =
+//       req.body;
+
+//     // Validate event_id
+//     if (!event_id || !mongoose.Types.ObjectId.isValid(event_id)) {
+//       return apiResponse.onError(
+//         res,
+//         "Please provide a valid event ID.",
+//         400,
+//         false
+//       );
+//     }
+
+//     // Validate captain_id
+//     if (!captain_id || !mongoose.Types.ObjectId.isValid(captain_id)) {
+//       return apiResponse.onError(
+//         res,
+//         "Please provide a valid captain ID.",
+//         400,
+//         false
+//       );
+//     }
+
+//     // Check if the captain exists for the event
+//     let captains = await CaptainModel.find({ event_id: event_id });
+//     if (!captains || captains.length === 0) {
+//       return apiResponse.onError(
+//         res,
+//         "Captain is not selected for this event.",
+//         400,
+//         false
+//       );
+//     }
+
+//     // Validate if the provided captain_id is in the list of event captains
+//     let validCaptain = captains.some(
+//       (captain) => captain.user_id.toString() === captain_id
+//     );
+//     if (!validCaptain) {
+//       return apiResponse.onError(
+//         res,
+//         "Only a team captain can create an event team.",
+//         400,
+//         false
+//       );
+//     }
+
+//     // Check if event exists
+//     const event = await EventModel.findById(event_id);
+//     if (!event) {
+//       return apiResponse.onError(res, "Selected event not found.", 404, false);
+//     }
+
+//     // Validate player_id array
+//     if (!player_id || !Array.isArray(player_id) || player_id.length === 0) {
+//       return apiResponse.onError(
+//         res,
+//         "Please provide a valid player_id array.",
+//         400,
+//         false
+//       );
+//     }
+
+//     if (player_id.some((id) => !mongoose.Types.ObjectId.isValid(id))) {
+//       return apiResponse.onError(
+//         res,
+//         "One or more player IDs are invalid.",
+//         400,
+//         false
+//       );
+//     }
+
+//     if (event.players_count && player_id.length > event.players_count) {
+//       return apiResponse.onError(
+//         res,
+//         `You cannot select more than ${event.players_count} players.`,
+//         400,
+//         false
+//       );
+//     }
+
+//     // Validate team_name
+//     if (!team_name || typeof team_name !== "string") {
+//       return apiResponse.onError(
+//         res,
+//         "Please provide a valid team name.",
+//         400,
+//         false
+//       );
+//     }
+
+//     // Validate shirt_color
+//     if (!shirt_color || typeof shirt_color !== "string") {
+//       return apiResponse.onError(
+//         res,
+//         "Please provide a valid shirt color.",
+//         400,
+//         false
+//       );
+//     }
+
+//     let captain_event_teams = await TeamModel.find({ event_id, captain_id });
+//     if (captain_event_teams) {
+//       return apiResponse.onError(
+//         res,
+//         "You already have created one team.",
+//         400,
+//         false
+//       );
+//     }
+
+//     // Check if the event already has two teams
+//     let event_teams = await TeamModel.find({ event_id });
+//     if (event_teams.length >= 2) {
+//       return apiResponse.onError(
+//         res,
+//         "This event already has two teams. You cannot create more than two teams.",
+//         400,
+//         false
+//       );
+//     }
+
+//     // Create the team
+//     let created_team = await TeamModel.create({
+//       event_id,
+//       team_name,
+//       captain_id,
+//       shirt_color,
+//     });
+
+//     // Update player attendance records
+//     await Promise.all(
+//       player_id.map(async (id) => {
+//         let updateAttendance = await EventAttandanceModel.findOne({
+//           user_id: id,
+//           event_id: event_id,
+//         });
+
+//         if (updateAttendance) {
+//           updateAttendance.team_id = created_team._id;
+//           updateAttendance.selection_status = 2;
+//           await updateAttendance.save(); // Ensure the update is saved
+//         }
+//       })
+//     );
+
+//     // Assign team to captain
+//     if (captain_id) {
+//       let captain = await EventAttandanceModel.findOne({
+//         user_id: captain_id,
+//         event_id: event_id,
+//       });
+//       if (captain) {
+//         captain.team_id = created_team._id;
+//         await captain.save();
+//       }
+//     }
+
+//     return apiResponse.onSuccess(res, "Team created successfully.", 200, true);
+//   } catch (err) {
+//     console.error("Error: ", err);
+//     return apiResponse.onError(
+//       res,
+//       "An error occurred while creating the team.",
+//       500,
+//       false
+//     );
+//   }
+// };
+
 let CreateTeam = async (req, res) => {
   try {
     const { event_id, player_id, captain_id, team_name, shirt_color } =
       req.body;
 
-    // Validate event_id
-    if (!event_id || !mongoose.Types.ObjectId.isValid(event_id)) {
+    // Validate event_id and captain_id
+    const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+    if (!isValidObjectId(event_id)) {
       return apiResponse.onError(
         res,
         "Please provide a valid event ID.",
@@ -256,36 +429,10 @@ let CreateTeam = async (req, res) => {
         false
       );
     }
-
-    // Validate captain_id
-    if (!captain_id || !mongoose.Types.ObjectId.isValid(captain_id)) {
+    if (!isValidObjectId(captain_id)) {
       return apiResponse.onError(
         res,
         "Please provide a valid captain ID.",
-        400,
-        false
-      );
-    }
-
-    // Check if the captain exists for the event
-    let captains = await CaptainModel.find({ event_id: event_id });
-    if (!captains || captains.length === 0) {
-      return apiResponse.onError(
-        res,
-        "Captain is not selected for this event.",
-        400,
-        false
-      );
-    }
-
-    // Validate if the provided captain_id is in the list of event captains
-    let validCaptain = captains.some(
-      (captain) => captain.user_id.toString() === captain_id
-    );
-    if (!validCaptain) {
-      return apiResponse.onError(
-        res,
-        "Only a team captain can create an event team.",
         400,
         false
       );
@@ -297,20 +444,29 @@ let CreateTeam = async (req, res) => {
       return apiResponse.onError(res, "Selected event not found.", 404, false);
     }
 
-    // Validate player_id array
-    if (!player_id || !Array.isArray(player_id) || player_id.length === 0) {
+    // Check if the captain is valid for the event
+    const captains = await CaptainModel.find({ event_id });
+    const validCaptain = captains.some(
+      (captain) => captain.user_id.toString() === captain_id
+    );
+    if (!validCaptain) {
       return apiResponse.onError(
         res,
-        "Please provide a valid player_id array.",
+        "Only a team captain can create an event team.",
         400,
         false
       );
     }
 
-    if (player_id.some((id) => !mongoose.Types.ObjectId.isValid(id))) {
+    // Validate player_id array
+    if (
+      !Array.isArray(player_id) ||
+      player_id.length === 0 ||
+      player_id.some((id) => !isValidObjectId(id))
+    ) {
       return apiResponse.onError(
         res,
-        "One or more player IDs are invalid.",
+        "Please provide a valid player_id array.",
         400,
         false
       );
@@ -325,8 +481,8 @@ let CreateTeam = async (req, res) => {
       );
     }
 
-    // Validate team_name
-    if (!team_name || typeof team_name !== "string") {
+    // Validate team_name and shirt_color
+    if (typeof team_name !== "string" || !team_name) {
       return apiResponse.onError(
         res,
         "Please provide a valid team name.",
@@ -334,9 +490,7 @@ let CreateTeam = async (req, res) => {
         false
       );
     }
-
-    // Validate shirt_color
-    if (!shirt_color || typeof shirt_color !== "string") {
+    if (typeof shirt_color !== "string" || !shirt_color) {
       return apiResponse.onError(
         res,
         "Please provide a valid shirt color.",
@@ -345,18 +499,20 @@ let CreateTeam = async (req, res) => {
       );
     }
 
-    let captain_event_teams = await TeamModel.find({ event_id, captain_id });
+    // Check for existing teams
+    const [captain_event_teams, event_teams] = await Promise.all([
+      TeamModel.findOne({ event_id, captain_id }),
+      TeamModel.find({ event_id }),
+    ]);
+
     if (captain_event_teams) {
       return apiResponse.onError(
         res,
-        "You already have created one team.",
+        "You have already created one team.",
         400,
         false
       );
     }
-
-    // Check if the event already has two teams
-    let event_teams = await TeamModel.find({ event_id });
     if (event_teams.length >= 2) {
       return apiResponse.onError(
         res,
@@ -367,7 +523,7 @@ let CreateTeam = async (req, res) => {
     }
 
     // Create the team
-    let created_team = await TeamModel.create({
+    const created_team = await TeamModel.create({
       event_id,
       team_name,
       captain_id,
@@ -377,29 +533,26 @@ let CreateTeam = async (req, res) => {
     // Update player attendance records
     await Promise.all(
       player_id.map(async (id) => {
-        let updateAttendance = await EventAttandanceModel.findOne({
+        const updateAttendance = await EventAttandanceModel.findOne({
           user_id: id,
-          event_id: event_id,
+          event_id,
         });
-
         if (updateAttendance) {
           updateAttendance.team_id = created_team._id;
           updateAttendance.selection_status = 2;
-          await updateAttendance.save(); // Ensure the update is saved
+          await updateAttendance.save();
         }
       })
     );
 
     // Assign team to captain
-    if (captain_id) {
-      let captain = await EventAttandanceModel.findOne({
-        user_id: captain_id,
-        event_id: event_id,
-      });
-      if (captain) {
-        captain.team_id = created_team._id;
-        await captain.save();
-      }
+    const captain = await EventAttandanceModel.findOne({
+      user_id: captain_id,
+      event_id,
+    });
+    if (captain) {
+      captain.team_id = created_team._id;
+      await captain.save();
     }
 
     return apiResponse.onSuccess(res, "Team created successfully.", 200, true);

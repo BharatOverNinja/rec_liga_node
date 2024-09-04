@@ -79,18 +79,18 @@ let getAttendingEvents = async (req, res) => {
   try {
     const userId = req.params.userId;
     const now = new Date();
-
+    console.log(now);
+    
     const attendingEvents = await AttendEvent.find({
       user_id: userId,
       is_attended: false,
-      start_date: { $gte: now },
+      start_time: { $gte: now },
     })
       .populate("event_id")
       .populate({
         path: "league_id",
         select: "-__v",
       })
-      .populate("team_id")
       .sort({ start_date: 1 });
 
     if (attendingEvents.length === 0) {
@@ -431,8 +431,8 @@ let attendEvent = async (req, res) => {
       selection_status: 1,
       is_captain: false,
       is_attended: false,
-      start_date: event.start_date,
-      end_date: event.end_date,
+      start_time: event.start_time,
+      end_time: event.end_time,
     });
 
     await newAttendance.save();

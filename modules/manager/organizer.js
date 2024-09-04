@@ -151,12 +151,28 @@ let getUpcomingEvents = async (req, res) => {
       );
     }
 
+    // Step 2: Fetch team details for events with is_team_drafted = true
+    let eventsWithTeams = await Promise.all(
+      events.map(async (event) => {
+        if (event.is_team_drafted) {
+          // Fetch the teams associated with this event
+          let teams = await Team.find({ event_id: event._id });
+
+          return {
+            ...event._doc, // Spread the event document details
+            teams: teams, // Add teams to the event details
+          };
+        }
+        return event; // Return the event as-is if teams are not drafted
+      })
+    );
+
     return apiResponse.onSuccess(
       res,
       "Events fetched successfully.",
       200,
       true,
-      events
+      eventsWithTeams
     );
   } catch (err) {
     console.log("err ", err);
@@ -360,9 +376,12 @@ let getEventDetails = async (req, res) => {
           .populate("user_id", "full_name positions profile_picture")
           .exec();
 
+        // Extract player user details
+        let playerDetails = players.map((player) => player.user_id);
+
         return {
           team,
-          players,
+          players: playerDetails,
         };
       })
     );

@@ -6,9 +6,9 @@ let EventModel = require("../models/event"),
   apiResponse = require("../helpers/apiResponse");
 const mongoose = require("mongoose");
 
-let ChangeRequestStatus = async (body, req, res) => {
+let ChangeRequestStatus = async (req, res) => {
   try {
-    const { event_id, user_id, request_status } = body;
+    const { event_id, user_id, request_status } = req.body;
 
     // Validate event_id
     if (!event_id || !mongoose.Types.ObjectId.isValid(event_id)) {
@@ -110,7 +110,7 @@ let ChangeRequestStatus = async (body, req, res) => {
   }
 };
 
-let AvailablePlayers = async (body, req, res) => {
+let AvailablePlayers = async (req, res) => {
   try {
     const { event_id } = req.params;
 
@@ -150,8 +150,8 @@ let AvailablePlayers = async (body, req, res) => {
           user_id: record.user_id._id,
           selection_status: 2,
           event_id: { $ne: event_id },
-          start_date: { $lt: event.end_date, $gte: event.start_date },
-          end_date: { $gt: event.start_date, $lte: event.end_date },
+          start_time: { $lt: event.end_time, $gte: event.start_time },
+          end_time: { $gt: event.start_time, $lte: event.end_time },
         });
 
         // If no conflicting events, keep the user in the list

@@ -49,10 +49,10 @@ router.post("/update_user/:userId", (req, res) => {
 router.get(
   "/get_current_user_details/:email",
   controller.getCurrentUserDetails 
-); //done
+);
 
 router.get("/sports_list", controller.SportsList);
 
-router.delete("/delete_account/:userId", controller.deleteAccount); //done
+router.delete("/delete_account/:userId", controller.deleteAccount);
 
 module.exports = router;
