@@ -8,6 +8,8 @@ router.get("/attending_events/:userId", controller.getAttendingEvents);
 
 router.get("/past_events/:userId", controller.getPastEvents);
 
+router.get("/teammates/:userId", controller.getTeammates);
+
 router.get("/all_league_players/:userId", controller.getAllLeaguePlayers);
 
 router.post("/rate_player", controller.ratePlayer);

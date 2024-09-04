@@ -147,7 +147,7 @@ let SportsList = async (req, res) => {
 //Choose Captain By Abraham
 let ChooseCaptain = async (req, res) => {
   try {
-    const { event_id, user_id } = req.body;
+    const { event_id, user_ids } = req.body; // Expecting an array of user_ids
 
     // Validate event_id
     if (!event_id || !mongoose.Types.ObjectId.isValid(event_id)) {
@@ -159,11 +159,16 @@ let ChooseCaptain = async (req, res) => {
       );
     }
 
-    // Validate user_id
-    if (!user_id || !mongoose.Types.ObjectId.isValid(user_id)) {
+    // Validate user_ids (should be an array and must contain exactly 2 user IDs)
+    if (
+      !user_ids ||
+      !Array.isArray(user_ids) ||
+      user_ids.length !== 2 ||
+      !user_ids.every((id) => mongoose.Types.ObjectId.isValid(id))
+    ) {
       return apiResponse.onSuccess(
         res,
-        "Please provide a valid user id.",
+        "Please provide exactly two valid user IDs.",
         400,
         false
       );
@@ -180,74 +185,61 @@ let ChooseCaptain = async (req, res) => {
       );
     }
 
-    // Check if user exists
-    const user = await UserModel.findById(user_id);
-    if (!user) {
+    // Check if users exist
+    const users = await UserModel.find({ _id: { $in: user_ids } });
+    if (users.length !== 2) {
       return apiResponse.onSuccess(
         res,
-        "Selected user not found with this id.",
+        "Selected users not found with provided IDs.",
         400,
         false
       );
     }
 
-    // Check if the user is already invited as a captain for the same event
-    let already_sent_request = await CaptainModel.findOne({
+    // Check if captains are already chosen for the event
+    let existingCaptains = await CaptainModel.find({
+      event_id: event_id,
+      request_status: 2,
+    });
+
+    if (existingCaptains.length >= 2) {
+      return apiResponse.onSuccess(
+        res,
+        "Captains are already chosen for this event.",
+        400,
+        false
+      );
+    }
+
+    // Ensure the selected users have not already been invited as captains
+    for (const user_id of user_ids) {
+      let alreadySentRequest = await CaptainModel.findOne({
+        event_id: event_id,
+        user_id: user_id,
+      });
+
+      if (alreadySentRequest) {
+        return apiResponse.onSuccess(
+          res,
+          "One or both selected users have already been invited as captains.",
+          400,
+          false
+        );
+      }
+    }
+
+    // Create captain entries for both selected users
+    const captainData = user_ids.map((user_id) => ({
       event_id: event_id,
       user_id: user_id,
-    });
+      request_status: 1, // Pending status
+    }));
 
-    if (already_sent_request) {
-      return apiResponse.onSuccess(
-        res,
-        "You have already invited this user for the same event.",
-        400,
-        false
-      );
-    }
-
-    // Check the number of confirmed captains for the event
-    let confirmedCaptains = await CaptainModel.countDocuments({
-      event_id: event_id,
-      request_status: 2, // Only consider confirmed captains
-    });
-
-    // Check if two captains have already been chosen
-    if (confirmedCaptains >= 2) {
-      return apiResponse.onSuccess(
-        res,
-        "Two captains have already been chosen for this event.",
-        400,
-        false
-      );
-    }
-
-    // If we already have one confirmed captain and one pending request, do not allow more requests
-    let pendingRequests = await CaptainModel.countDocuments({
-      event_id: event_id,
-      request_status: 1, // Consider pending captain requests
-    });
-
-    if (confirmedCaptains + pendingRequests >= 2) {
-      return apiResponse.onSuccess(
-        res,
-        "A maximum of two captain requests (confirmed or pending) are allowed for this event.",
-        400,
-        false
-      );
-    }
-
-    // Create a new captain request with status '1' (pending)
-    let captainData = {
-      event_id: event_id,
-      user_id: user_id,
-      request_status: 1,
-    };
-    await CaptainModel.create(captainData);
+    await CaptainModel.insertMany(captainData);
 
     return apiResponse.onSuccess(
       res,
-      "Captain chosen successfully. Awaiting confirmation.",
+      "Captains chosen successfully.",
       200,
       true
     );
@@ -255,7 +247,7 @@ let ChooseCaptain = async (req, res) => {
     console.log("err ", err);
     return apiResponse.onError(
       res,
-      "An error occurred while choosing the captain.",
+      "An error occurred while choosing the captains.",
       500,
       false
     );

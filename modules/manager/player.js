@@ -80,7 +80,7 @@ let getAttendingEvents = async (req, res) => {
     const userId = req.params.userId;
     const now = new Date();
     console.log(now);
-    
+
     const attendingEvents = await AttendEvent.find({
       user_id: userId,
       is_attended: false,
@@ -174,6 +174,71 @@ let getPastEvents = async (req, res) => {
     return apiResponse.onError(
       res,
       "An error occurred while fetching past events.",
+      500,
+      false
+    );
+  }
+};
+
+let getTeammates = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Fetch the last attended event of the user
+    const lastAttendedEvent = await AttendEvent.findOne({
+      user_id: userId,
+      is_attended: true,
+    })
+      .sort({ end_time: -1 }) // Sort by end_time in descending order to get the last event
+      .populate("team_id");
+
+    if (!lastAttendedEvent) {
+      return apiResponse.onSuccess(
+        res,
+        "No past events found for the user.",
+        404,
+        false
+      );
+    }
+
+    // Extract the team_id from the last attended event
+    const teamId = lastAttendedEvent.team_id;
+
+    // Fetch all teammates in the same team
+    const teammates = await AttendEvent.find({
+      team_id: teamId,
+      is_attended: true,
+      user_id: { $ne: userId }, // Exclude the current user
+    })
+      .populate("user_id", "-password -__v") // Populate user details but exclude sensitive fields
+      .select("user_id");
+
+    if (teammates.length === 0) {
+      return apiResponse.onSuccess(
+        res,
+        "No teammates found in the user's last event.",
+        404,
+        false
+      );
+    }
+
+    const formattedTeammates = teammates.map((teammate) => {
+      const formattedTeammate = teammate.user_id.toObject();
+      return formattedTeammate;
+    });
+
+    return apiResponse.onSuccess(
+      res,
+      "Teammates fetched successfully.",
+      200,
+      true,
+      formattedTeammates
+    );
+  } catch (error) {
+    console.error("Error fetching teammates: ", error);
+    return apiResponse.onError(
+      res,
+      "An error occurred while fetching teammates.",
       500,
       false
     );
@@ -548,7 +613,9 @@ const getPublicLeagues = async (req, res) => {
     const publicLeagues = await League.find({ join_privacy: 1 }).lean();
 
     // Step 2: Fetch all league IDs where the user has joined
-    const userJoinedLeagues = await LeaguePlayerModel.find({ player_id: userId })
+    const userJoinedLeagues = await LeaguePlayerModel.find({
+      player_id: userId,
+    })
       .select("league_id")
       .lean();
     const userJoinedLeagueIds = userJoinedLeagues.map((lp) =>
@@ -594,6 +661,7 @@ module.exports = {
   getAttendingEvents,
   getAllLeaguePlayers,
   getPastEvents,
+  getTeammates,
   getPlayerLeagues,
   getLeagueDetails,
   joinLeague,

@@ -12,6 +12,10 @@ let getPastEvents = (req, res) => {
   return playerManager.getPastEvents(req, res);
 };
 
+let getTeammates = (req, res) => {
+  return playerManager.getTeammates(req, res);
+};
+
 let getAllLeaguePlayers = (req, res) => {
   return playerManager.getAllLeaguePlayers(req, res);
 };
@@ -52,6 +56,7 @@ module.exports = {
   getUpcomingEvents,
   getAttendingEvents,
   getPastEvents,
+  getTeammates,
   getAllLeaguePlayers,
   getPlayerLeagues,
   getLeagueDetails,
