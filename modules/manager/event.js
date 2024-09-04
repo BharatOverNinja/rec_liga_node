@@ -146,7 +146,7 @@ let SportsList = async (req, res) => {
 
 let ChooseCaptain = async (req, res) => {
   try {
-    const { event_id, user_id } = req.body;
+    const { event_id, user_ids } = req.body; // Expecting an array of user_ids
 
     // Validate event_id
     if (!event_id || !mongoose.Types.ObjectId.isValid(event_id)) {
@@ -158,11 +158,16 @@ let ChooseCaptain = async (req, res) => {
       );
     }
 
-    // Validate player_id
-    if (!user_id || !mongoose.Types.ObjectId.isValid(user_id)) {
+    // Validate user_ids (should be an array and must contain exactly 2 user IDs)
+    if (
+      !user_ids ||
+      !Array.isArray(user_ids) ||
+      user_ids.length !== 2 ||
+      !user_ids.every((id) => mongoose.Types.ObjectId.isValid(id))
+    ) {
       return apiResponse.onSuccess(
         res,
-        "Please provide a valid user id.",
+        "Please provide exactly two valid user IDs.",
         400,
         false
       );
@@ -179,55 +184,61 @@ let ChooseCaptain = async (req, res) => {
       );
     }
 
-    // Check if user exists
-    const user = await UserModel.findById(user_id);
-    if (!user) {
+    // Check if users exist
+    const users = await UserModel.find({ _id: { $in: user_ids } });
+    if (users.length !== 2) {
       return apiResponse.onSuccess(
         res,
-        "Selected user not found with this id.",
+        "Selected users not found with provided IDs.",
         400,
         false
       );
     }
 
-    let already_sent_request = await CaptainModel.findOne({
-      event_id: event_id,
-      user_id: user_id,
-    });
-
-    if (already_sent_request) {
-      return apiResponse.onSuccess(
-        res,
-        "You have already invited same user for same event.",
-        400,
-        false
-      );
-    }
-
-    let captain = await CaptainModel.find({
+    // Check if captains are already chosen for the event
+    let existingCaptains = await CaptainModel.find({
       event_id: event_id,
       request_status: 2,
     });
 
-    if (captain.length >= 2) {
+    if (existingCaptains.length >= 2) {
       return apiResponse.onSuccess(
         res,
-        "Captains are already choosen for this event.",
+        "Captains are already chosen for this event.",
         400,
         false
       );
     }
 
-    let captainData = {
+    // Ensure the selected users have not already been invited as captains
+    for (const user_id of user_ids) {
+      let alreadySentRequest = await CaptainModel.findOne({
+        event_id: event_id,
+        user_id: user_id,
+      });
+
+      if (alreadySentRequest) {
+        return apiResponse.onSuccess(
+          res,
+          "One or both selected users have already been invited as captains.",
+          400,
+          false
+        );
+      }
+    }
+
+    // Create captain entries for both selected users
+    const captainData = user_ids.map((user_id) => ({
       event_id: event_id,
       user_id: user_id,
-      request_status: 1,
-    };
-    await CaptainModel.create(captainData);
+      request_status: 1, // Pending status
+    }));
+
+    await CaptainModel.insertMany(captainData);
 
     return apiResponse.onSuccess(
       res,
-      "Captain choosen successfully.",
+      "Captains chosen successfully.",
       200,
       true
     );
@@ -235,12 +246,110 @@ let ChooseCaptain = async (req, res) => {
     console.log("err ", err);
     return apiResponse.onError(
       res,
-      "An error occurred while choosing the captain.",
+      "An error occurred while choosing the captains.",
       500,
       false
     );
   }
 };
+
+// let ChooseCaptain = async (req, res) => {
+//   try {
+//     const { event_id, user_id } = req.body;
+
+//     // Validate event_id
+//     if (!event_id || !mongoose.Types.ObjectId.isValid(event_id)) {
+//       return apiResponse.onSuccess(
+//         res,
+//         "Please provide a valid event id.",
+//         400,
+//         false
+//       );
+//     }
+
+//     // Validate player_id
+//     if (!user_id || !mongoose.Types.ObjectId.isValid(user_id)) {
+//       return apiResponse.onSuccess(
+//         res,
+//         "Please provide a valid user id.",
+//         400,
+//         false
+//       );
+//     }
+
+//     // Check if event exists
+//     const event = await EventModel.findById(event_id);
+//     if (!event) {
+//       return apiResponse.onSuccess(
+//         res,
+//         "Selected event not found.",
+//         400,
+//         false
+//       );
+//     }
+
+//     // Check if user exists
+//     const user = await UserModel.findById(user_id);
+//     if (!user) {
+//       return apiResponse.onSuccess(
+//         res,
+//         "Selected user not found with this id.",
+//         400,
+//         false
+//       );
+//     }
+
+//     let already_sent_request = await CaptainModel.findOne({
+//       event_id: event_id,
+//       user_id: user_id,
+//     });
+
+//     if (already_sent_request) {
+//       return apiResponse.onSuccess(
+//         res,
+//         "You have already invited same user for same event.",
+//         400,
+//         false
+//       );
+//     }
+
+//     let captain = await CaptainModel.find({
+//       event_id: event_id,
+//       request_status: 2,
+//     });
+
+//     if (captain.length >= 2) {
+//       return apiResponse.onSuccess(
+//         res,
+//         "Captains are already choosen for this event.",
+//         400,
+//         false
+//       );
+//     }
+
+//     let captainData = {
+//       event_id: event_id,
+//       user_id: user_id,
+//       request_status: 1,
+//     };
+//     await CaptainModel.create(captainData);
+
+//     return apiResponse.onSuccess(
+//       res,
+//       "Captain choosen successfully.",
+//       200,
+//       true
+//     );
+//   } catch (err) {
+//     console.log("err ", err);
+//     return apiResponse.onError(
+//       res,
+//       "An error occurred while choosing the captain.",
+//       500,
+//       false
+//     );
+//   }
+// };
 
 // let CreateTeam = async (req, res) => {
 //   try {

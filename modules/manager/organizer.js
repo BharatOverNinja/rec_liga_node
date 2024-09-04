@@ -162,8 +162,13 @@ let getUpcomingEvents = async (req, res) => {
             ...event._doc, // Spread the event document details
             teams: teams, // Add teams to the event details
           };
+        } else {
+          // For events where is_team_drafted is false, return an empty teams array
+          return {
+            ...event._doc, // Spread the event document details
+            teams: [], // Set teams to an empty array
+          };
         }
-        return event; // Return the event as-is if teams are not drafted
       })
     );
 
