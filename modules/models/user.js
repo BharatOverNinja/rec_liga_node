@@ -33,7 +33,7 @@ const schemaDefinition = new Schema(
 
     wins: { type: Number, default: 0 },
 
-    losses: { type: Number, default: 0},
+    losses: { type: Number, default: 0 },
 
     ties: { type: Number, default: 0 },
 
@@ -42,6 +42,8 @@ const schemaDefinition = new Schema(
     att: { type: Number, default: 0 },
 
     positions: [{ type: String }],
+
+    player_rating: { type: Number, min: 0, max: 3, default: 0 },
 
     date: { type: Date, default: Date.now },
   },

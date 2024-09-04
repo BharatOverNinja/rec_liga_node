@@ -435,7 +435,7 @@ let organizerDraftTeam = async (req, res) => {
       event_id: event._id,
       selection_status: 1,
     })
-      .populate("user_id", "full_name positions profile_picture")
+      .populate("user_id", "full_name positions profile_picture player_rating")
       .exec();
 
     // Prepare the event details with players
