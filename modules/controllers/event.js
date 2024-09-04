@@ -13,7 +13,7 @@ let ChooseCaptain = (req, res) => {
 };
 
 let CreateTeam = (req, res) => {
-  return eventManager.CreateTeam(req, res);
+  return eventManager.CreateTeam(req.body, req, res);
 };
 
 let UpdateTeam = (req, res) => {

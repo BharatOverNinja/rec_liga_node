@@ -3,6 +3,7 @@
 let EventModel = require("../models/event"),
   EventAttandanceModel = require("../models/attend_event"),
   CaptainModel = require("../models/captain"),
+  TeamModel = require("../models/team"),
   apiResponse = require("../helpers/apiResponse");
 const mongoose = require("mongoose");
 
@@ -56,7 +57,7 @@ let ChangeRequestStatus = async (req, res) => {
     let captain_limt = await CaptainModel.find({
       event_id: new mongoose.Types.ObjectId(event_id),
     });
-    if (captain_limt.length >= 2) {
+    if (captain_limt.length > 2) {
       return apiResponse.onSuccess(
         res,
         "Another captain has accepted request.",
@@ -164,13 +165,16 @@ let AvailablePlayers = async (req, res) => {
 
     // Remove null values from the array
     const final_filtered_users = filtered_users.filter((user) => user !== null);
+    let teams = await TeamModel.find({
+      event_id : event_id
+    })
 
     return apiResponse.onSuccess(
       res,
       "Available players list fetched.",
       200,
       true,
-      final_filtered_users
+      {players : final_filtered_users, teams : teams}
     );
   } catch (err) {
     console.log("err ", err);
