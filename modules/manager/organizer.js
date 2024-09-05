@@ -115,6 +115,120 @@ let getLeaguesAddedByOrganizer = async (req, res) => {
   }
 };
 
+// let getUpcomingEvents = async (req, res) => {
+//   try {
+//     const organizerId = req.params.organizerId;
+
+//     if (!organizerId) {
+//       return apiResponse.onSuccess(
+//         res,
+//         "Organizer ID is required.",
+//         400,
+//         false
+//       );
+//     }
+
+//     const today = new Date();
+
+//     // Step 1: Fetch upcoming events with league details
+//     let events = await Event.find({
+//       organizer_id: organizerId,
+//       start_time: { $gte: today },
+//     })
+//       .sort({ start_time: 1 })
+//       .populate({
+//         path: "league_id", // Field to populate
+//         select:
+//           "name location date sport_id join_privacy statistics_info image", // Fields to return from League model
+//       });
+
+//     if (events.length === 0) {
+//       return apiResponse.onSuccess(
+//         res,
+//         "No upcoming events found.",
+//         404,
+//         false
+//       );
+//     }
+
+//     // Step 2: Fetch team details for events with is_team_drafted = true
+//     let eventsWithTeams = await Promise.all(
+//       events.map(async (event) => {
+//         if (event.is_team_drafted) {
+//           // Fetch the teams associated with this event
+//           let teams = await Team.find({ event_id: event._id });
+
+//           return {
+//             ...event._doc, // Spread the event document details
+//             teams: teams, // Add teams to the event details
+//           };
+//         } else {
+//           // For events where is_team_drafted is false, return an empty teams array
+//           return {
+//             ...event._doc, // Spread the event document details
+//             teams: [], // Set teams to an empty array
+//           };
+//         }
+//       })
+//     );
+
+//     // Step 3: Group events by league_id
+//     const groupedEvents = eventsWithTeams.reduce((acc, event) => {
+//       const leagueId = event.league_id._id.toString(); // Ensure we use a string key
+//       if (!acc[leagueId]) {
+//         acc[leagueId] = {
+//           league: {
+//             _id: event.league_id._id,
+//             name: event.league_id.name,
+//             location: event.league_id.location,
+//             date: event.league_id.date,
+//             sport_id: event.league_id.sport_id,
+//             join_privacy: event.league_id.join_privacy,
+//             statistics_info: event.league_id.statistics_info,
+//             image: event.league_id.image,
+//           },
+//           events: [],
+//         };
+//       }
+//       acc[leagueId].events.push({
+//         _id: event._id,
+//         title: event.title,
+//         date: event.date,
+//         location: event.location,
+//         players_count: event.players_count,
+//         start_time: event.start_time,
+//         end_time: event.end_time,
+//         repeat_event: event.repeat_event,
+//         is_team_drafted: event.is_team_drafted,
+//         createdAt: event.createdAt,
+//         updatedAt: event.updatedAt,
+//         teams: event.teams,
+//         players: event.players,
+//       });
+//       return acc;
+//     }, {});
+
+//     // Convert the grouped events object to an array
+//     const groupedEventsArray = Object.values(groupedEvents);
+
+//     return apiResponse.onSuccess(
+//       res,
+//       "Events fetched successfully.",
+//       200,
+//       true,
+//       groupedEventsArray
+//     );
+//   } catch (err) {
+//     console.log("err ", err);
+//     return apiResponse.onError(
+//       res,
+//       "An error occurred while fetching events.",
+//       500,
+//       false
+//     );
+//   }
+// };
+
 let getUpcomingEvents = async (req, res) => {
   try {
     const organizerId = req.params.organizerId;
@@ -135,7 +249,7 @@ let getUpcomingEvents = async (req, res) => {
       organizer_id: organizerId,
       start_time: { $gte: today },
     })
-      .sort({ start_time: 1 })
+      .sort({ start_date: 1 })
       .populate({
         path: "league_id", // Field to populate
         select:
@@ -172,51 +286,12 @@ let getUpcomingEvents = async (req, res) => {
       })
     );
 
-    // Step 3: Group events by league_id
-    const groupedEvents = eventsWithTeams.reduce((acc, event) => {
-      const leagueId = event.league_id._id.toString(); // Ensure we use a string key
-      if (!acc[leagueId]) {
-        acc[leagueId] = {
-          league: {
-            _id: event.league_id._id,
-            name: event.league_id.name,
-            location: event.league_id.location,
-            date: event.league_id.date,
-            sport_id: event.league_id.sport_id,
-            join_privacy: event.league_id.join_privacy,
-            statistics_info: event.league_id.statistics_info,
-            image: event.league_id.image,
-          },
-          events: [],
-        };
-      }
-      acc[leagueId].events.push({
-        _id: event._id,
-        title: event.title,
-        date: event.date,
-        location: event.location,
-        players_count: event.players_count,
-        start_time: event.start_time,
-        end_time: event.end_time,
-        repeat_event: event.repeat_event,
-        is_team_drafted: event.is_team_drafted,
-        createdAt: event.createdAt,
-        updatedAt: event.updatedAt,
-        teams: event.teams,
-        players: event.players,
-      });
-      return acc;
-    }, {});
-
-    // Convert the grouped events object to an array
-    const groupedEventsArray = Object.values(groupedEvents);
-
     return apiResponse.onSuccess(
       res,
       "Events fetched successfully.",
       200,
       true,
-      groupedEventsArray
+      eventsWithTeams
     );
   } catch (err) {
     console.log("err ", err);
