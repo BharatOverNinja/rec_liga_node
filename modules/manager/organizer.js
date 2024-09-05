@@ -371,7 +371,7 @@ let getEventDetails = async (req, res) => {
     // Fetch the teams associated with the event
     let teams = await Team.find({ event_id: event._id });
 
-    // Fetch the players for each team
+    // Fetch the players for each team including captains
     let teamsWithPlayers = await Promise.all(
       teams.map(async (team) => {
         let players = await AttendEvent.find({
@@ -381,12 +381,14 @@ let getEventDetails = async (req, res) => {
           .populate("user_id", "full_name positions profile_picture")
           .exec();
 
-        // Extract player user details
+        // Extract player user details and captain details
         let playerDetails = players.map((player) => player.user_id);
+        let captain = players.find((player) => player.is_captain); // Find the captain
 
         return {
           team,
           players: playerDetails,
+          captain: captain ? captain.user_id : null, // Add captain details if available
         };
       })
     );

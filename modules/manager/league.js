@@ -6,8 +6,8 @@ let LeagueModel = require("../models/league"),
   UserModel = require("../models/user"),
   Event = require("../models/event.js"),
   PointTableModel = require("../models/point_table"),
-  apiResponse = require("../helpers/apiResponse");
-const mongoose = require("mongoose");
+  apiResponse = require("../helpers/apiResponse"),
+  mongoose = require("mongoose");
 
 let getLeagueSportsList = async (req, res) => {
   try {

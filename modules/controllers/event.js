@@ -12,6 +12,10 @@ let ChooseCaptain = (req, res) => {
   return eventManager.ChooseCaptain(req, res);
 };
 
+let EditEvent = (req, res) => {
+  return eventManager.EditEvent(req, res);
+};
+
 let CreateTeam = (req, res) => {
   return eventManager.CreateTeam(req.body, req, res);
 };
@@ -31,4 +35,5 @@ module.exports = {
   CreateTeam: CreateTeam,
   UpdateTeam: UpdateTeam,
   GetTeam: GetTeam,
+  EditEvent,
 };

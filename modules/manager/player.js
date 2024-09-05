@@ -3,6 +3,7 @@
 let League = require("../models/league"),
   AttendEvent = require("../models/attend_event"),
   Event = require("../models/event"),
+  Team = require("../models/team"),
   LeaguePlayerModel = require("../models/league_player"),
   User = require("../models/user"),
   apiResponse = require("../helpers/apiResponse");
@@ -133,20 +134,20 @@ let getPastEvents = async (req, res) => {
     const userId = req.params.userId;
     const now = new Date();
 
+    if (!userId) {
+      return apiResponse.onSuccess(res, "User ID is required.", 400, false);
+    }
+
+    // Step 1: Fetch past events attended by the user
     const pastEvents = await AttendEvent.find({
       user_id: userId,
       is_attended: true,
-      end_date: { $lt: now },
+      end_time: { $lt: now },
     })
       .populate("event_id")
-      .populate({
-        path: "league_id",
-        select: "-__v",
-      })
-      .populate("team_id")
-      .sort({ start_date: 1 });
+      .sort({ start_time: 1 });
 
-    if (pastEvents.length === 0) {
+    if (!pastEvents || pastEvents.length === 0) {
       return apiResponse.onSuccess(
         res,
         "No past events found for the user.",
@@ -155,22 +156,65 @@ let getPastEvents = async (req, res) => {
       );
     }
 
-    const formattedEvents = pastEvents.map((event) => {
-      const formattedEvent = event.toObject(); // Convert Mongoose document to plain JavaScript object
-      formattedEvent.league = formattedEvent.league_id; // Rename 'league_id' to 'league'
-      delete formattedEvent.league_id; // Remove the old 'league_id' field
-      return formattedEvent;
+    // Step 2: Extract event IDs from past events
+    const eventIds = pastEvents.map((event) => event.event_id._id);
+
+    // Step 3: Fetch events where results have been uploaded
+    const eventsWithResults = await Event.find({
+      _id: { $in: eventIds },
+      result: { $ne: null },
+      team_a_score: { $ne: null },
+      team_b_score: { $ne: null },
     });
+
+    if (!eventsWithResults || eventsWithResults.length === 0) {
+      return apiResponse.onSuccess(
+        res,
+        "No past events with results found.",
+        404,
+        false
+      );
+    }
+
+    const formattedEvents = await Promise.all(
+      eventsWithResults.map(async (event) => {
+        const formattedEvent = event.toObject();
+
+        // Step 4: Fetch team details for the event
+        const teams = await Team.find({ event_id: event._id }).populate(
+          "captain_id",
+          "_id full_name profile_picture positions"
+        );
+
+        // Step 5: Fetch players for both teams
+        const playersInTeams = await AttendEvent.find({
+          event_id: event._id,
+          team_id: { $in: teams.map((team) => team._id) },
+        }).populate("user_id", "_id full_name profile_picture positions"); // Fetch only specific player details
+
+        formattedEvent.teams = teams.map((team) => {
+          const teamObject = team.toObject();
+          teamObject.players = playersInTeams
+            .filter(
+              (player) => player.team_id.toString() === team._id.toString()
+            )
+            .map((player) => player.user_id); // List of players for each team with limited fields
+          return teamObject;
+        });
+
+        return formattedEvent;
+      })
+    );
 
     return apiResponse.onSuccess(
       res,
-      "Past events fetched successfully.",
+      "Past events with results fetched successfully.",
       200,
       true,
       formattedEvents
     );
   } catch (err) {
-    console.log("err ", err);
+    console.error("Error fetching past events:", err);
     return apiResponse.onError(
       res,
       "An error occurred while fetching past events.",
@@ -195,7 +239,7 @@ let getTeammates = async (req, res) => {
     if (!lastAttendedEvent) {
       return apiResponse.onSuccess(
         res,
-        "No past events found for the user.",
+        "No past attended events found for the user.",
         404,
         false
       );
@@ -210,7 +254,7 @@ let getTeammates = async (req, res) => {
       is_attended: true,
       user_id: { $ne: userId }, // Exclude the current user
     })
-      .populate("user_id", "-password -__v") // Populate user details but exclude sensitive fields
+      .populate("user_id", "_id full_name profile_picture positions") // Populate only the required user details
       .select("user_id");
 
     if (teammates.length === 0) {
@@ -248,7 +292,6 @@ let getTeammates = async (req, res) => {
 let getPlayerLeagues = async (req, res) => {
   try {
     const userId = req.params.userId;
-    console.log("userId ", userId);
 
     const leaguePlayers = await LeaguePlayerModel.find({
       player_id: userId,
@@ -266,9 +309,37 @@ let getPlayerLeagues = async (req, res) => {
 
     const leagueIds = leaguePlayers.map((lp) => lp.league_id);
 
-    const leagues = await League.find({
-      _id: { $in: leagueIds },
-    });
+    // Fetch leagues and count of players who have joined each league
+    const leagues = await League.aggregate([
+      {
+        $match: { _id: { $in: leagueIds } }, // Match the league IDs
+      },
+      {
+        $lookup: {
+          from: "league_players", // Lookup from the league_players collection
+          localField: "_id", // Local field in the leagues collection
+          foreignField: "league_id", // Foreign field in the league_players collection
+          as: "players", // Name of the field to add to each league document
+        },
+      },
+      {
+        $addFields: {
+          playerCount: {
+            $size: {
+              $filter: {
+                input: "$players",
+                cond: { $eq: ["$$this.status", 2] }, // Count players with status == 2
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          players: 0, // Exclude the players array from the result
+        },
+      },
+    ]);
 
     if (!leagues || leagues.length === 0) {
       return apiResponse.onSuccess(
@@ -304,6 +375,7 @@ let getAllLeaguePlayers = async (req, res) => {
     // Find all leagues the user is a part of
     const userLeagues = await LeaguePlayerModel.find({
       player_id: userId,
+      status: 2,
     });
 
     // If the user is not part of any leagues
@@ -349,17 +421,17 @@ let getAllLeaguePlayers = async (req, res) => {
 
 let getLeagueDetails = async (req, res) => {
   const { leagueId } = req.body;
+  const today = new Date();
   try {
     // Fetch league details
-    const league = await League.findById(leagueId)
-      .populate("events") // Populate the events details
-      .populate({
-        path: "users",
-        select:
-          "full_name nick_name email role phone profile_picture rank points wins losses ties cw att",
-        model: "users", // Ensure that Mongoose uses the correct model for players
-      }); // Populate the players' basic details
-
+    const league = await League.findById(leagueId).populate("events"); // Populate the events details
+    // .populate({
+    //   path: "users",
+    //   select:
+    //     "full_name profile_picture positions player_rating",
+    //   model: "users", // Ensure that Mongoose uses the correct model for players
+    // }); // Populate the players' basic details
+    // console.log(league);
     if (!league) {
       return apiResponse.onError(res, "League not found", 404, false);
     }
@@ -369,16 +441,20 @@ let getLeagueDetails = async (req, res) => {
       league_id: leagueId,
       status: 2,
     }).select("player_id");
+    // console.log(leaguePlayers)
 
     const playerIds = leaguePlayers.map((lp) => lp.player_id);
-
+    // console.log(playerIds)
     // Fetch player details from the users collection
     const players = await User.find({ _id: { $in: playerIds } }).select(
-      "full_name nick_name email phone profile_picture rank points wins losses ties cw att role city date_of_birth sports positions"
+      "full_name profile_picture positions player_rating rank points"
     );
 
     // Fetch all events associated with the league
-    const events = await Event.find({ league_id: leagueId });
+    const events = await Event.find({
+      league_id: leagueId,
+      date: { $gte: today },
+    });
 
     // Combine league details, players, and events into one response
     const response = {

@@ -263,6 +263,7 @@ let SportsList = async (req, res) => {
 // };
 
 //Choose Captain By Milan
+
 let ChooseCaptain = async (req, res) => {
   try {
     const { event_id, user_id } = req.body;
@@ -277,7 +278,7 @@ let ChooseCaptain = async (req, res) => {
       );
     }
 
-    if(user_id.length > 2) {
+    if (user_id.length > 2) {
       return apiResponse.onSuccess(
         res,
         "You can provide upto 2 ids.",
@@ -731,7 +732,7 @@ let CreateTeam = async (body, req, res) => {
 
     // Check if the captain exists for the event
     let captains = await CaptainModel.find({ event_id: event_id });
-    console.log("captains ", captains)
+    console.log("captains ", captains);
     if (!captains || captains.length === 0) {
       return apiResponse.onError(
         res,
@@ -835,7 +836,7 @@ let CreateTeam = async (body, req, res) => {
       team_name,
       captain_id,
       shirt_color,
-      turn: false
+      turn: false,
     });
 
     // Update player attendance records
@@ -865,11 +866,11 @@ let CreateTeam = async (body, req, res) => {
       }
       let teams = await TeamModel.findOne({
         event_id: event_id,
-        captain_id : {$ne: captain_id}
-      })
+        captain_id: { $ne: captain_id },
+      });
 
-      if(teams) {
-        teams.turn = true
+      if (teams) {
+        teams.turn = true;
         teams.save();
       }
     }
@@ -882,6 +883,57 @@ let CreateTeam = async (body, req, res) => {
       "An error occurred while creating the team.",
       500,
       false
+    );
+  }
+};
+
+let EditEvent = async (req, res) => {
+  const { title, date, location, start_time, end_time } = req.body;
+  const eventId = req.params.eventId;
+
+  // Validate Event ID
+  if (!mongoose.Types.ObjectId.isValid(eventId)) {
+    return apiResponse.onError(res, "Invalid event ID", 400);
+  }
+
+  try {
+    // Find the event by ID
+    const event = await EventModel.findById(eventId);
+    if (!event) {
+      return apiResponse.onError(res, "Event not found", 404);
+    }
+
+    // Prepare updates
+    const updates = {
+      title,
+      date,
+      location,
+      start_time,
+      end_time,
+    };
+
+    // Apply updates to event object
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value !== undefined && value !== "") {
+        event[key] = value;
+      }
+    });
+
+    await event.save();
+
+    return apiResponse.onSuccess(
+      res,
+      "Event updated successfully",
+      200,
+      true,
+      event
+    );
+  } catch (err) {
+    console.log("Error updating event: ", err);
+    return apiResponse.onError(
+      res,
+      "An error occurred while updating the event.",
+      500
     );
   }
 };
@@ -907,8 +959,13 @@ let UpdateTeam = async (req, res) => {
       return apiResponse.onError(res, "Selected team not found.", 404, false);
     }
 
-    if(team.turn == false) {
-      return apiResponse.onSuccess(res, "It's not your turn to select player, Please wait till other captain select there player.", 404, false);
+    if (team.turn == false) {
+      return apiResponse.onSuccess(
+        res,
+        "It's not your turn to select player, Please wait till other captain select there player.",
+        404,
+        false
+      );
     }
 
     // Get the associated event
@@ -986,11 +1043,11 @@ let UpdateTeam = async (req, res) => {
       const result = await EventAttandanceModel.findOne({
         event_id: team.event_id,
         selection_status: 2,
-        user_id : player_id[0],
-        team_id: { $exists: true, $type: 'objectId' } // Checks if team_id exists and is a valid ObjectId
-      })
+        user_id: player_id[0],
+        team_id: { $exists: true, $type: "objectId" }, // Checks if team_id exists and is a valid ObjectId
+      });
 
-      if(result) {
+      if (result) {
         return apiResponse.onError(
           res,
           `This player has been already choosen by another captain.`,
@@ -998,7 +1055,6 @@ let UpdateTeam = async (req, res) => {
           false
         );
       }
-      
     }
 
     // Prepare update data
@@ -1035,11 +1091,11 @@ let UpdateTeam = async (req, res) => {
 
     let get_apponent_team = await TeamModel.findOne({
       event_id: team.event_id,
-      captain_id : {$ne: team.captain_id}
-    })
+      captain_id: { $ne: team.captain_id },
+    });
 
-    if(team) {
-      get_apponent_team.turn = true
+    if (team) {
+      get_apponent_team.turn = true;
       get_apponent_team.save();
     }
 
@@ -1108,4 +1164,5 @@ module.exports = {
   CreateTeam: CreateTeam,
   UpdateTeam: UpdateTeam,
   GetTeam: GetTeam,
+  EditEvent,
 };

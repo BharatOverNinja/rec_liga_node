@@ -12,6 +12,8 @@ router.post("/choose_captain", controller.ChooseCaptain);
 
 router.post("/create_team", controller.CreateTeam);
 
+router.post("/edit_event/:eventId", controller.EditEvent);
+
 router.put("/update_team/:team_id", controller.UpdateTeam);
 
 router.get("/get_team/:event_id", controller.GetTeam);

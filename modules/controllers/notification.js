@@ -1,7 +1,7 @@
 let notificationManager = require("../manager/notification");
 
-let SendNotification = (req, res) => {
-  return notificationManager.SendNotification(req, res);
+let sendNotification = (req, res) => {
+  return notificationManager.sendNotification(req, res);
 };
 
 let NotificationList = (req, res, next) => {
@@ -10,5 +10,5 @@ let NotificationList = (req, res, next) => {
 
 module.exports = {
   NotificationList,
-  SendNotification,
+  sendNotification,
 };
