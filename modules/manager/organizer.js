@@ -193,7 +193,7 @@ let getUpcomingEvents = async (req, res) => {
 let getPastEventsWhereResultHasUploaded = async (req, res) => {
   try {
     const organizerId = req.params.organizerId;
-
+    console.log(organizerId, "ogId")
     if (!organizerId) {
       return apiResponse.onSuccess(
         res,
@@ -208,7 +208,7 @@ let getPastEventsWhereResultHasUploaded = async (req, res) => {
     // Query for fetching past events where result, team_a_score, and team_b_score exist
     let events = await Event.find({
       organizer_id: organizerId,
-      end_date: { $lt: today },
+      end_time: { $lt: today },
       result: { $exists: true, $ne: "" }, // Check if 'result' exists and is not empty
       team_a_score: { $exists: true, $ne: "" }, // Check if 'team_a_score' exists and is not empty
       team_b_score: { $exists: true, $ne: "" }, // Check if 'team_b_score' exists and is not empty
