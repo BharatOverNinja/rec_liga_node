@@ -311,6 +311,7 @@ let getPastEventsWhereResultNotUploaded = async (req, res) => {
     let eventsWithDetails = await Promise.all(
       events.map(async (event) => {
         let teams = await Team.find({ event_id: event._id });
+
         // Fetch player details for each team
         let teamsWithPlayers = await Promise.all(
           teams.map(async (team) => {
@@ -322,10 +323,12 @@ let getPastEventsWhereResultNotUploaded = async (req, res) => {
               .exec();
 
             let formattedPlayers = players.map((player) => player.user_id);
+            let captain = players.find((player) => player.is_captain);
 
             return {
               team,
               players: formattedPlayers,
+              captain: captain ? captain.user_id : null, // Include captain details
             };
           })
         );
