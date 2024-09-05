@@ -287,7 +287,7 @@ let getPastEventsWhereResultNotUploaded = async (req, res) => {
     // Fetch past events where result, team_a_score, and team_b_score are not uploaded
     let events = await Event.find({
       organizer_id: organizerId,
-      end_date: { $lt: today },
+      end_time: { $lt: today },
       $or: [
         { result: { $exists: false } }, // Check if 'result' does not exist
         { result: "" }, // Check if 'result' is an empty string
