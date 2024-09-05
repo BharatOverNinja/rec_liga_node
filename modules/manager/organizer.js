@@ -234,10 +234,12 @@ let getPastEventsWhereResultHasUploaded = async (req, res) => {
 
             // Extract player user details in the correct format
             let formattedPlayers = players.map((player) => player.user_id);
+            let captain = players.find((player) => player.is_captain);
 
             return {
               team,
               players: formattedPlayers,
+              captain: captain ? captain.user_id : null, // Include captain details
             };
           })
         );
