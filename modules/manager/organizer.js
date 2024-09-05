@@ -133,9 +133,9 @@ let getUpcomingEvents = async (req, res) => {
     // Step 1: Fetch upcoming events with league details
     let events = await Event.find({
       organizer_id: organizerId,
-      start_date: { $gte: today },
+      start_time: { $gte: today },
     })
-      .sort({ start_date: 1 })
+      .sort({ start_time: 1 })
       .populate({
         path: "league_id", // Field to populate
         select:
@@ -172,12 +172,51 @@ let getUpcomingEvents = async (req, res) => {
       })
     );
 
+    // Step 3: Group events by league_id
+    const groupedEvents = eventsWithTeams.reduce((acc, event) => {
+      const leagueId = event.league_id._id.toString(); // Ensure we use a string key
+      if (!acc[leagueId]) {
+        acc[leagueId] = {
+          league: {
+            _id: event.league_id._id,
+            name: event.league_id.name,
+            location: event.league_id.location,
+            date: event.league_id.date,
+            sport_id: event.league_id.sport_id,
+            join_privacy: event.league_id.join_privacy,
+            statistics_info: event.league_id.statistics_info,
+            image: event.league_id.image,
+          },
+          events: [],
+        };
+      }
+      acc[leagueId].events.push({
+        _id: event._id,
+        title: event.title,
+        date: event.date,
+        location: event.location,
+        players_count: event.players_count,
+        start_time: event.start_time,
+        end_time: event.end_time,
+        repeat_event: event.repeat_event,
+        is_team_drafted: event.is_team_drafted,
+        createdAt: event.createdAt,
+        updatedAt: event.updatedAt,
+        teams: event.teams,
+        players: event.players,
+      });
+      return acc;
+    }, {});
+
+    // Convert the grouped events object to an array
+    const groupedEventsArray = Object.values(groupedEvents);
+
     return apiResponse.onSuccess(
       res,
       "Events fetched successfully.",
       200,
       true,
-      eventsWithTeams
+      groupedEventsArray
     );
   } catch (err) {
     console.log("err ", err);
@@ -193,7 +232,6 @@ let getUpcomingEvents = async (req, res) => {
 let getPastEventsWhereResultHasUploaded = async (req, res) => {
   try {
     const organizerId = req.params.organizerId;
-    console.log(organizerId, "ogId")
     if (!organizerId) {
       return apiResponse.onSuccess(
         res,
