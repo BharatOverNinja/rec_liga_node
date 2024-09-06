@@ -19,7 +19,7 @@ let getUpcomingEvents = async (req, res) => {
     }).select("league_id");
 
     if (!leaguePlayers || leaguePlayers.length === 0) {
-      return apiResponse.onSuccess(res, "No results found.", 404, false);
+      return apiResponse.onSuccess(res, "No active leagues found!", 404, false);
     }
 
     const leagueIds = leaguePlayers.map((lp) => lp.league_id);
@@ -28,7 +28,7 @@ let getUpcomingEvents = async (req, res) => {
     const today = new Date();
     const events = await Event.find({
       league_id: { $in: leagueIds },
-      start_date: { $gte: today },
+      start_time: { $gte: today },
     })
       .sort({ start_date: 1 })
       .populate({
@@ -39,7 +39,7 @@ let getUpcomingEvents = async (req, res) => {
     // Fetch events that the user has already joined
     const attendedEvents = await AttendEvent.find({
       user_id: userId,
-      selection_status: 1,
+      $or: [{ selection_status: 1 }, { selection_status: 2 }],
     }).select("event_id");
 
     const attendedEventIds = attendedEvents.map((ae) => ae.event_id);
