@@ -41,25 +41,30 @@ let getUpcomingEvents = async (req, res) => {
       user_id: userId,
       event_id: { $in: events.map((event) => event._id) }, // Only consider upcoming events
       selection_status: { $in: [1, 2] }, // 1: pending, 2: accepted
-    }).select("event_id selection_status");
+    }).select("event_id selection_status is_captain");
 
-    // Create a map of attended event IDs and their statuses
+    // Create a map of attended event IDs, their statuses, and captain status
     const attendedEventMap = {};
     attendedEvents.forEach((attendEvent) => {
-      attendedEventMap[attendEvent.event_id.toString()] =
-        attendEvent.selection_status;
+      attendedEventMap[attendEvent.event_id.toString()] = {
+        selection_status: attendEvent.selection_status,
+        is_captain: attendEvent.is_captain || false, // Default to false if not present
+      };
     });
 
-    // Step 4: Add status to each event to indicate if the user has joined
+    // Step 4: Add status and captain field to each event
     const formattedEvents = events.map((event) => {
       const eventObject = event.toObject();
-      if (attendedEventMap[event._id.toString()]) {
-        eventObject.status =
-          attendedEventMap[event._id.toString()] === 2 ? "2" : "1";
-        //1 Means Joined Event, 2 Means Selected to Team
+      const attendedInfo = attendedEventMap[event._id.toString()];
+
+      if (attendedInfo) {
+        eventObject.status = attendedInfo.selection_status === 2 ? "2" : "1"; // 1: Joined, 2: Selected to Team
+        eventObject.captain = attendedInfo.is_captain ? true : false; // Set captain field based on is_captain value
       } else {
         eventObject.status = "Not Joined";
+        eventObject.captain = false; // Not a captain if the user hasn't joined the event
       }
+
       return eventObject;
     });
 
