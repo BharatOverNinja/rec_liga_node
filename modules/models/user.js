@@ -27,23 +27,23 @@ const schemaDefinition = new Schema(
 
     sports: [{ type: String }],
 
-    rank: { type: Number, default: 0 },
+    rank: { type: Number, },
 
-    points: { type: Number, default: 0 },
+    points: { type: Number, },
 
-    wins: { type: Number, default: 0 },
+    wins: { type: Number, },
 
-    losses: { type: Number, default: 0 },
+    losses: { type: Number, },
 
-    ties: { type: Number, default: 0 },
+    ties: { type: Number, },
 
-    cw: { type: Number, default: 0 },
+    cw: { type: Number, },
 
-    att: { type: Number, default: 0 },
+    att: { type: Number, },
 
     positions: [{ type: String }],
 
-    player_rating: { type: Number, min: 0, max: 3, default: 0 },
+    player_rating: { type: Number, min: 0, max: 3, },
 
     date: { type: Date, default: Date.now },
   },
@@ -57,6 +57,7 @@ schemaDefinition.pre("save", function (next) {
     this.wins = this.wins || 0;
     this.losses = this.losses || 0;
     this.ties = this.ties || 0;
+    this.player_rating = this.player_rating || 0;
   }
   next();
 });

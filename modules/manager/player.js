@@ -80,7 +80,6 @@ let getAttendingEvents = async (req, res) => {
   try {
     const userId = req.params.userId;
     const now = new Date();
-    console.log(now);
 
     const attendingEvents = await AttendEvent.find({
       user_id: userId,
@@ -252,9 +251,9 @@ let getTeammates = async (req, res) => {
     const teammates = await AttendEvent.find({
       team_id: teamId,
       is_attended: true,
-      user_id: { $ne: userId }, // Exclude the current user
+      user_id: { $ne: userId },
     })
-      .populate("user_id", "_id full_name profile_picture positions") // Populate only the required user details
+      .populate("user_id", "_id full_name profile_picture positions player_rating")
       .select("user_id");
 
     if (teammates.length === 0) {
@@ -407,7 +406,13 @@ let getAllLeaguePlayers = async (req, res) => {
       _id: { $in: playerIds },
     });
 
-    return apiResponse.onSuccess(res, "Users fetched successfully", 200, users);
+    return apiResponse.onSuccess(
+      res,
+      "Users fetched successfully",
+      200,
+      true,
+      users
+    );
   } catch (err) {
     console.log("Error fetching players: ", err);
     return apiResponse.onError(

@@ -732,7 +732,6 @@ let CreateTeam = async (body, req, res) => {
 
     // Check if the captain exists for the event
     let captains = await CaptainModel.find({ event_id: event_id });
-    console.log("captains ", captains);
     if (!captains || captains.length === 0) {
       return apiResponse.onError(
         res,

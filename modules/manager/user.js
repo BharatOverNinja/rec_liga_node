@@ -65,7 +65,6 @@ let SportsList = async (res) => {
 let getCurrentUserDetails = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.params.email });
-    console.log("user", user);
 
     if (!user) {
       return apiResponse.onError(res, "User not found", 400);

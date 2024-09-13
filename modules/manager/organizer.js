@@ -253,7 +253,7 @@ let getUpcomingEvents = async (req, res) => {
       .populate({
         path: "league_id", // Field to populate
         select:
-          "name location date sport_id join_privacy statistics_info image", // Fields to return from League model
+          "name location date sport_id join_privacy statistics_info image",
       });
 
     if (events.length === 0) {
