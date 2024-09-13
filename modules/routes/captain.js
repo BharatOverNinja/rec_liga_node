@@ -5,6 +5,7 @@ let express = require("express"),
   controller = require("../controllers/captain");
 
 router.post("/request", controller.ChangeRequestStatus);
-router.get("/available_players/:event_id", controller.AvailablePlayers);
+
+router.get("/available_players/:event_id", controller.AvailablePlayers); 
 
 module.exports = router;

@@ -1,19 +1,121 @@
 "use strict";
 
 let NotificationModel = require("../models/notification"),
-  apiResponse = require("../helpers/apiResponse");
-const mongoose = require('mongoose');
+  apiResponse = require("../helpers/apiResponse"),
+  mongoose = require("mongoose"),
+  admin = require("../middleware/firebase_admin.js");
 
-let NotificationList = async (body,req, res) => {
+const MAX_RETRIES = 3;
+
+// Function to send notification with a retry mechanism
+async function sendNotification(req, res) {
+  const { token, title, body, platform, data } = req.body; // Extract data from the request
+
+  if (!token || !title || !body || !platform) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Missing required parameters." });
+  }
+
+  // Create a platform-specific payload
+  const payload = createPayload(token, title, body, platform, data);
+
+  // Send notification with retry mechanism
+  try {
+    const response = await sendWithRetry(payload, MAX_RETRIES);
+    return res.status(200).json({ success: true, response });
+  } catch (error) {
+    return res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+// Helper function to create platform-specific payload
+function createPayload(token, title, body, platform, data) {
+  const basePayload = {
+    token: token,
+    notification: {
+      title: title,
+      body: body,
+    },
+    data: data || {},
+  };
+
+  // Add platform-specific options
+  if (platform === "android") {
+    basePayload.android = {
+      priority: "high",
+      notification: {
+        sound: "default",
+        clickAction: "FLUTTER_NOTIFICATION_CLICK",
+      },
+    };
+  } else if (platform === "ios") {
+    basePayload.apns = {
+      headers: {
+        "apns-priority": "10",
+      },
+      payload: {
+        aps: {
+          sound: "default",
+          badge: 1,
+        },
+      },
+    };
+  } else if (platform === "web") {
+    basePayload.webpush = {
+      headers: {
+        Urgency: "high",
+      },
+      notification: {
+        icon: "/icon.png",
+        click_action: "https://yourwebsite.com",
+      },
+    };
+  }
+
+  return basePayload;
+}
+
+// Helper function to send notifications with retry
+async function sendWithRetry(payload, retriesLeft) {
+  try {
+    const response = await admin.messaging().send(payload);
+    return response; // Return response if successful
+  } catch (error) {
+    if (retriesLeft <= 1) {
+      throw new Error(
+        "Failed to send notification after multiple attempts: " + error.message
+      );
+    }
+
+    console.error(
+      "Error sending notification. Retries left: " + (retriesLeft - 1),
+      error.message
+    );
+
+    // Wait for a second before retrying
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    return sendWithRetry(payload, retriesLeft - 1);
+  }
+}
+
+let NotificationList = async (body, req, res) => {
   try {
     const { user_id } = req.params;
 
     // Validate event_id
     if (!user_id || !mongoose.Types.ObjectId.isValid(user_id)) {
-      return apiResponse.onSuccess(res, "Please provide a valid user id.", 400, false);
+      return apiResponse.onSuccess(
+        res,
+        "Please provide a valid user id.",
+        400,
+        false
+      );
     }
 
-    let notification_list = await NotificationModel.find({user_id : new mongoose.Types.ObjectId(user_id) }).populate("user_id")
+    let notification_list = await NotificationModel.find({
+      user_id: new mongoose.Types.ObjectId(user_id),
+    }).populate("user_id");
 
     return apiResponse.onSuccess(
       res,
@@ -22,10 +124,12 @@ let NotificationList = async (body,req, res) => {
       true,
       notification_list
     );
-  }catch(err) {
-    console.log("err ", err)
+  } catch (err) {
+    console.log("err ", err);
   }
-}
+};
+
 module.exports = {
-  NotificationList: NotificationList
+  NotificationList,
+  sendNotification,
 };

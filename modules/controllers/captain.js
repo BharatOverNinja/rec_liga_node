@@ -1,16 +1,14 @@
 let captainManager = require("../manager/captain");
 
-let ChangeRequestStatus = (req, res, next) => {
-  return captainManager
-    .ChangeRequestStatus(req.body, req, res);
-}
+let ChangeRequestStatus = (req, res) => {
+  return captainManager.ChangeRequestStatus(req, res);
+};
 
-let AvailablePlayers = (req, res, next) => {
-  return captainManager
-    .AvailablePlayers(req.body, req, res);
-}
+let AvailablePlayers = (req, res) => {
+  return captainManager.AvailablePlayers(req, res);
+};
 
 module.exports = {
   ChangeRequestStatus: ChangeRequestStatus,
-  AvailablePlayers: AvailablePlayers
+  AvailablePlayers: AvailablePlayers,
 };

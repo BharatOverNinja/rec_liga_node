@@ -7,6 +7,7 @@ const schemaDefinition = new Schema(
     team_name: { type: String },
     captain_id: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
     shirt_color: { type: String },
+    turn: { type: Boolean}
   },
   { versionKey: false, collection: "teams", timestamps: true }
 );
