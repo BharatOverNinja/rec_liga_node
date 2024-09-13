@@ -4,7 +4,7 @@ let express = require("express"),
 
 router.get("/upcoming_events/:userId", controller.getUpcomingEvents);
 
-router.get("/attending_events/:userId", controller.getAttendingEvents);
+// router.get("/attending_events/:userId", controller.getAttendingEvents);
 
 router.get("/past_events/:userId", controller.getPastEvents);
 

@@ -11,11 +11,12 @@ let League = require("../models/league"),
 let getUpcomingEvents = async (req, res) => {
   try {
     const userId = req.params.userId;
+    const today = new Date();
 
-    // Fetch leagues the user has joined
+    // Step 1: Fetch leagues the user has joined
     const leaguePlayers = await LeaguePlayerModel.find({
       player_id: userId,
-      status: 2,
+      status: 2, // Joined leagues
     }).select("league_id");
 
     if (!leaguePlayers || leaguePlayers.length === 0) {
@@ -24,32 +25,45 @@ let getUpcomingEvents = async (req, res) => {
 
     const leagueIds = leaguePlayers.map((lp) => lp.league_id);
 
-    // Fetch upcoming events from the leagues the user has joined
-    const today = new Date();
+    // Step 2: Fetch upcoming events from the leagues the user has joined
     const events = await Event.find({
       league_id: { $in: leagueIds },
-      start_time: { $gte: today },
+      start_time: { $gte: today }, // Only upcoming events
     })
-      .sort({ start_date: 1 })
+      .sort({ start_time: 1 })
       .populate({
         path: "league_id",
         select: "-__v",
       });
 
-    // Fetch events that the user has already joined
+    // Step 3: Fetch events that the user has already joined
     const attendedEvents = await AttendEvent.find({
       user_id: userId,
-      $or: [{ selection_status: 1 }, { selection_status: 2 }],
-    }).select("event_id");
+      event_id: { $in: events.map((event) => event._id) }, // Only consider upcoming events
+      selection_status: { $in: [1, 2] }, // 1: pending, 2: accepted
+    }).select("event_id selection_status");
 
-    const attendedEventIds = attendedEvents.map((ae) => ae.event_id);
+    // Create a map of attended event IDs and their statuses
+    const attendedEventMap = {};
+    attendedEvents.forEach((attendEvent) => {
+      attendedEventMap[attendEvent.event_id.toString()] =
+        attendEvent.selection_status;
+    });
 
-    // Exclude events that the user has already joined
-    const filteredEvents = events.filter(
-      (event) => !attendedEventIds.includes(event._id.toString())
-    );
+    // Step 4: Add status to each event to indicate if the user has joined
+    const formattedEvents = events.map((event) => {
+      const eventObject = event.toObject();
+      if (attendedEventMap[event._id.toString()]) {
+        eventObject.status =
+          attendedEventMap[event._id.toString()] === 2 ? "2" : "1";
+        //1 Means Joined Event, 2 Means Selected to Team
+      } else {
+        eventObject.status = "Not Joined";
+      }
+      return eventObject;
+    });
 
-    if (filteredEvents.length === 0) {
+    if (formattedEvents.length === 0) {
       return apiResponse.onSuccess(
         res,
         "No upcoming events found.",
@@ -63,7 +77,7 @@ let getUpcomingEvents = async (req, res) => {
       "Events fetched successfully.",
       200,
       true,
-      filteredEvents
+      formattedEvents
     );
   } catch (err) {
     console.log("err ", err);
@@ -76,57 +90,124 @@ let getUpcomingEvents = async (req, res) => {
   }
 };
 
-let getAttendingEvents = async (req, res) => {
-  try {
-    const userId = req.params.userId;
-    const now = new Date();
+// let getUpcomingEvents = async (req, res) => {
+//   try {
+//     const userId = req.params.userId;
 
-    const attendingEvents = await AttendEvent.find({
-      user_id: userId,
-      is_attended: false,
-      start_time: { $gte: now },
-    })
-      .populate("event_id")
-      .populate({
-        path: "league_id",
-        select: "-__v",
-      })
-      .sort({ start_date: 1 });
+//     // Fetch leagues the user has joined
+//     const leaguePlayers = await LeaguePlayerModel.find({
+//       player_id: userId,
+//       status: 2,
+//     }).select("league_id");
 
-    if (attendingEvents.length === 0) {
-      return apiResponse.onSuccess(
-        res,
-        "No events found that the user is attending.",
-        404,
-        false
-      );
-    }
+//     if (!leaguePlayers || leaguePlayers.length === 0) {
+//       return apiResponse.onSuccess(res, "No active leagues found!", 404, false);
+//     }
 
-    // Rename 'league_id' to 'league' in each attending event
-    const formattedEvents = attendingEvents.map((event) => {
-      const formattedEvent = event.toObject(); // Convert Mongoose document to plain JavaScript object
-      formattedEvent.league = formattedEvent.league_id; // Rename 'league_id' to 'league'
-      delete formattedEvent.league_id; // Remove the old 'league_id' field
-      return formattedEvent;
-    });
+//     const leagueIds = leaguePlayers.map((lp) => lp.league_id);
 
-    return apiResponse.onSuccess(
-      res,
-      "Attending events fetched successfully.",
-      200,
-      true,
-      formattedEvents
-    );
-  } catch (err) {
-    console.log("err ", err);
-    return apiResponse.onError(
-      res,
-      "An error occurred while fetching attending events.",
-      500,
-      false
-    );
-  }
-};
+//     // Fetch upcoming events from the leagues the user has joined
+//     const today = new Date();
+//     const events = await Event.find({
+//       league_id: { $in: leagueIds },
+//       start_time: { $gte: today },
+//     })
+//       .sort({ start_date: 1 })
+//       .populate({
+//         path: "league_id",
+//         select: "-__v",
+//       });
+
+//     // Fetch events that the user has already joined
+//     const attendedEvents = await AttendEvent.find({
+//       user_id: userId,
+//       $or: [{ selection_status: 1 }, { selection_status: 2 }],
+//     }).select("event_id");
+
+//     const attendedEventIds = attendedEvents.map((ae) => ae.event_id);
+
+//     // Exclude events that the user has already joined
+//     const filteredEvents = events.filter(
+//       (event) => !attendedEventIds.includes(event._id.toString())
+//     );
+
+//     if (filteredEvents.length === 0) {
+//       return apiResponse.onSuccess(
+//         res,
+//         "No upcoming events found.",
+//         404,
+//         false
+//       );
+//     }
+
+//     return apiResponse.onSuccess(
+//       res,
+//       "Events fetched successfully.",
+//       200,
+//       true,
+//       filteredEvents
+//     );
+//   } catch (err) {
+//     console.log("err ", err);
+//     return apiResponse.onError(
+//       res,
+//       "An error occurred while fetching upcoming events.",
+//       500,
+//       false
+//     );
+//   }
+// };
+// let getAttendingEvents = async (req, res) => {
+//   try {
+//     const userId = req.params.userId;
+//     const now = new Date();
+
+//     const attendingEvents = await AttendEvent.find({
+//       user_id: userId,
+//       is_attended: false,
+//       start_time: { $gte: now },
+//     })
+//       .populate("event_id")
+//       .populate({
+//         path: "league_id",
+//         select: "-__v",
+//       })
+//       .sort({ start_date: 1 });
+
+//     if (attendingEvents.length === 0) {
+//       return apiResponse.onSuccess(
+//         res,
+//         "No events found that the user is attending.",
+//         404,
+//         false
+//       );
+//     }
+
+//     // Rename 'league_id' to 'league' in each attending event
+//     const formattedEvents = attendingEvents.map((event) => {
+//       const formattedEvent = event.toObject(); // Convert Mongoose document to plain JavaScript object
+//       formattedEvent.league = formattedEvent.league_id; // Rename 'league_id' to 'league'
+//       delete formattedEvent.league_id; // Remove the old 'league_id' field
+//       return formattedEvent;
+//     });
+
+//     return apiResponse.onSuccess(
+//       res,
+//       "Attending events fetched successfully.",
+//       200,
+//       true,
+//       formattedEvents
+//     );
+//   } catch (err) {
+//     console.log("err ", err);
+//     return apiResponse.onError(
+//       res,
+//       "An error occurred while fetching attending events.",
+//       500,
+//       false
+//     );
+//   }
+// };
 
 let getPastEvents = async (req, res) => {
   try {
@@ -189,15 +270,21 @@ let getPastEvents = async (req, res) => {
         const playersInTeams = await AttendEvent.find({
           event_id: event._id,
           team_id: { $in: teams.map((team) => team._id) },
+          selection_status: 2, // Only fetch accepted players
         }).populate("user_id", "_id full_name profile_picture positions"); // Fetch only specific player details
 
         formattedEvent.teams = teams.map((team) => {
           const teamObject = team.toObject();
-          teamObject.players = playersInTeams
-            .filter(
-              (player) => player.team_id.toString() === team._id.toString()
-            )
-            .map((player) => player.user_id); // List of players for each team with limited fields
+          const teamPlayers = playersInTeams.filter(
+            (player) => player.team_id.toString() === team._id.toString()
+          );
+
+          // Find the captain among the players
+          const captain = teamPlayers.find((player) => player.is_captain);
+
+          teamObject.players = teamPlayers.map((player) => player.user_id); // List of players for each team with limited fields
+          teamObject.captain = captain ? captain.user_id : null; // Include captain details
+
           return teamObject;
         });
 
@@ -253,7 +340,10 @@ let getTeammates = async (req, res) => {
       is_attended: true,
       user_id: { $ne: userId },
     })
-      .populate("user_id", "_id full_name profile_picture positions player_rating")
+      .populate(
+        "user_id",
+        "_id full_name profile_picture positions player_rating"
+      )
       .select("user_id");
 
     if (teammates.length === 0) {
@@ -739,7 +829,7 @@ const getPublicLeagues = async (req, res) => {
 
 module.exports = {
   getUpcomingEvents,
-  getAttendingEvents,
+  // getAttendingEvents,
   getAllLeaguePlayers,
   getPastEvents,
   getTeammates,

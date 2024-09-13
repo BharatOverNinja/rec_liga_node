@@ -4,9 +4,9 @@ let getUpcomingEvents = (req, res) => {
   return playerManager.getUpcomingEvents(req, res);
 };
 
-let getAttendingEvents = (req, res) => {
-  return playerManager.getAttendingEvents(req, res);
-};
+// let getAttendingEvents = (req, res) => {
+//   return playerManager.getAttendingEvents(req, res);
+// };
 
 let getPastEvents = (req, res) => {
   return playerManager.getPastEvents(req, res);
@@ -54,7 +54,7 @@ let getPublicLeagues = (req, res) => {
 
 module.exports = {
   getUpcomingEvents,
-  getAttendingEvents,
+  // getAttendingEvents,
   getPastEvents,
   getTeammates,
   getAllLeaguePlayers,
