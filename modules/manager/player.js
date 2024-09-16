@@ -67,6 +67,9 @@ let getUpcomingEvents = async (req, res) => {
       const eventObject = event.toObject();
       const attendedInfo = attendedEventMap[event._id.toString()];
 
+      // Initialize teams array as empty
+      eventObject.teams = [];
+
       if (attendedInfo) {
         // User has joined this event
         eventObject.status = attendedInfo.selection_status === 2 ? "2" : "1"; // 1: Joined, 2: Selected to Team
@@ -104,7 +107,7 @@ let getUpcomingEvents = async (req, res) => {
         // User has NOT joined this event
         eventObject.status = "0"; // Status 0: Not Joined
         eventObject.captain = false; // Not a captain if the user hasn't joined the event
-        eventObject.teams = []; // No teams if not joined or no selection yet
+        // teams will remain empty as initialized
       }
 
       return eventObject;
