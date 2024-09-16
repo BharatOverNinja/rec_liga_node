@@ -36,39 +36,7 @@ let getUpcomingEvents = async (req, res) => {
         select: "-__v",
       });
 
-    // Step 3: Fetch events that the user has already joined
-    const attendedEvents = await AttendEvent.find({
-      user_id: userId,
-      event_id: { $in: events.map((event) => event._id) }, // Only consider upcoming events
-      selection_status: { $in: [1, 2] }, // 1: pending, 2: accepted
-    }).select("event_id selection_status is_captain");
-
-    // Create a map of attended event IDs, their statuses, and captain status
-    const attendedEventMap = {};
-    attendedEvents.forEach((attendEvent) => {
-      attendedEventMap[attendEvent.event_id.toString()] = {
-        selection_status: attendEvent.selection_status,
-        is_captain: attendEvent.is_captain || false, // Default to false if not present
-      };
-    });
-
-    // Step 4: Add status and captain field to each event
-    const formattedEvents = events.map((event) => {
-      const eventObject = event.toObject();
-      const attendedInfo = attendedEventMap[event._id.toString()];
-
-      if (attendedInfo) {
-        eventObject.status = attendedInfo.selection_status === 2 ? "2" : "1"; // 1: Joined, 2: Selected to Team
-        eventObject.captain = attendedInfo.is_captain ? true : false; // Set captain field based on is_captain value
-      } else {
-        eventObject.status = "Not Joined";
-        eventObject.captain = false; // Not a captain if the user hasn't joined the event
-      }
-
-      return eventObject;
-    });
-
-    if (formattedEvents.length === 0) {
+    if (!events.length) {
       return apiResponse.onSuccess(
         res,
         "No upcoming events found.",
@@ -76,6 +44,71 @@ let getUpcomingEvents = async (req, res) => {
         false
       );
     }
+
+    // Step 3: Fetch events that the user has joined
+    const attendedEvents = await AttendEvent.find({
+      user_id: userId,
+      event_id: { $in: events.map((event) => event._id) }, // Only consider upcoming events
+      selection_status: { $in: [1, 2] },
+    }).select("event_id selection_status team_id is_captain");
+
+    // Create a map of attended event IDs, their statuses, and team details
+    const attendedEventMap = {};
+    attendedEvents.forEach((attendEvent) => {
+      attendedEventMap[attendEvent.event_id.toString()] = {
+        selection_status: attendEvent.selection_status,
+        team_id: attendEvent.team_id,
+        is_captain: attendEvent.is_captain || false, // Default to false if not present
+      };
+    });
+
+    // Step 4: For events with selection_status 2, fetch team details and teammates
+    const teamDetailsPromises = events.map(async (event) => {
+      const eventObject = event.toObject();
+      const attendedInfo = attendedEventMap[event._id.toString()];
+
+      if (attendedInfo) {
+        eventObject.status = attendedInfo.selection_status === 2 ? "2" : "1"; // 1: Joined, 2: Selected to Team
+        eventObject.captain = attendedInfo.is_captain ? true : false; // Set captain field based on is_captain value
+
+        if (attendedInfo.selection_status === 2) {
+          // Fetch team details for the event
+          const teams = await Team.find({ event_id: event._id }).lean();
+
+          const teamPromises = teams.map(async (team) => {
+            // Fetch players in each team using AttendEvent schema
+            const players = await AttendEvent.find({
+              team_id: team._id,
+              selection_status: 2,
+            })
+              .populate("user_id", "full_name profile_picture") // Populate user details
+              .lean();
+
+            team.teammates = players.map((player) => ({
+              name: player.user_id.full_name,
+              profile_picture: player.user_id.profile_picture,
+              id: player.user_id._id,
+            }));
+
+            // Mark user's team
+            team.is_user_team =
+              String(team._id) === String(attendedInfo.team_id);
+
+            return team;
+          });
+
+          eventObject.teams = await Promise.all(teamPromises);
+        }
+      } else {
+        eventObject.status = "Not Joined";
+        eventObject.captain = false; // Not a captain if the user hasn't joined the event
+        eventObject.teams = []; // No teams if not joined or no selection yet
+      }
+
+      return eventObject;
+    });
+
+    const formattedEvents = await Promise.all(teamDetailsPromises);
 
     return apiResponse.onSuccess(
       res,
