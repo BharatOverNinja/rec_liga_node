@@ -2,6 +2,7 @@
 
 let SportsModel = require("../models/sports"),
   User = require("../models/user"),
+  Notification = require("../models/notification"),
   jwt = require("jsonwebtoken"),
   mongoose = require("mongoose"),
   apiResponse = require("../helpers/apiResponse");
@@ -64,23 +65,37 @@ let SportsList = async (res) => {
 
 let getCurrentUserDetails = async (req, res) => {
   try {
+    // Fetch the user from the database
     const user = await User.findOne({ email: req.params.email });
 
+    // If the user is not found, return an error
     if (!user) {
       return apiResponse.onError(res, "User not found", 400);
     }
+
+    // Fetch notifications for the user
+    let notificationForCaptain = await Notification.find({ user_id: user._id, read_status: false, type: 'became_captain' });
+
+    // Convert the Mongoose document to a plain JavaScript object
+    let userObject = user.toObject();
+
+    // Add notifications to the user object
+    userObject.notifications = notificationForCaptain;
+
+    // Return the user data with notifications
     return apiResponse.onSuccess(
       res,
       "User details fetched successfully",
       200,
       true,
-      user
+      userObject
     );
   } catch (err) {
     console.log("Error fetching user details:", err);
     return apiResponse.onError(res, "An error occurred", 500);
   }
 };
+
 
 let updateUser = async (req, res) => {
   const {
