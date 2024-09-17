@@ -3,6 +3,7 @@
 let LeagueModel = require("../models/league"),
   EventModel = require("../models/event"),
   CaptainModel = require("../models/captain"),
+  NotificationModel = require("../models/notification"),
   EventAttandanceModel = require("../models/attend_event"),
   TeamModel = require("../models/team"),
   UserModel = require("../models/user"),
@@ -359,6 +360,19 @@ let ChooseCaptain = async (req, res) => {
         request_status: 1, // Assuming 1 is the pending status
       };
       await CaptainModel.create(captainData);
+
+      const createNotificationData = {
+        user_id : x,
+        detailed_id : null,
+        type: "became_captain", // 'became_captain'
+        title : "Became a captain",
+        message : "You Are Selected As Team Captain For "+event.name+".",
+        read_status : false,
+        sent_status : 1,
+        sent_date : new Date()
+      }
+
+      await NotificationModel.create(createNotificationData);
     }
 
     return apiResponse.onSuccess(
