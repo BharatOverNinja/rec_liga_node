@@ -5,6 +5,7 @@ let User = require("../models/user"),
   LeaguePlayers = require("../models/league_player"),
   League = require("../models/league"),
   Team = require("../models/team"),
+  Captain = require("../models/captain"),
   AttendEvent = require("../models/attend_event"),
   Event = require("../models/event");
 
@@ -135,11 +136,11 @@ let getLeaguesAddedByOrganizer = async (req, res) => {
 //       organizer_id: organizerId,
 //       start_time: { $gte: today },
 //     })
-//       .sort({ start_time: 1 })
+//       .sort({ start_date: 1 })
 //       .populate({
-//         path: "league_id", // Field to populate
+//         path: "league_id",
 //         select:
-//           "name location date sport_id join_privacy statistics_info image", // Fields to return from League model
+//           "name location date sport_id join_privacy statistics_info image",
 //       });
 
 //     if (events.length === 0) {
@@ -151,72 +152,47 @@ let getLeaguesAddedByOrganizer = async (req, res) => {
 //       );
 //     }
 
-//     // Step 2: Fetch team details for events with is_team_drafted = true
-//     let eventsWithTeams = await Promise.all(
+//     // Step 2: Fetch team and captain details for events with is_team_drafted = true
+//     let eventsWithTeamsAndCaptains = await Promise.all(
 //       events.map(async (event) => {
+//         // Step 2a: Fetch teams for drafted events
+//         let teams = [];
 //         if (event.is_team_drafted) {
-//           // Fetch the teams associated with this event
-//           let teams = await Team.find({ event_id: event._id });
-
-//           return {
-//             ...event._doc, // Spread the event document details
-//             teams: teams, // Add teams to the event details
-//           };
-//         } else {
-//           // For events where is_team_drafted is false, return an empty teams array
-//           return {
-//             ...event._doc, // Spread the event document details
-//             teams: [], // Set teams to an empty array
-//           };
+//           teams = await Team.find({ event_id: event._id });
 //         }
+
+//         // Step 2b: Check captain status for the event
+//         let captainStatus = "No captains selected";
+//         const captains = await Captain.find({ event_id: event._id });
+
+//         if (captains.length === 2) {
+//           const captain1Status = captains[0].request_status;
+//           const captain2Status = captains[1].request_status;
+
+//           if (captain1Status === 1 || captain2Status === 1) {
+//             captainStatus = "Captains selected but invitation pending";
+//           } else if (captain1Status === 2 && captain2Status === 2) {
+//             captainStatus = "Both captains accepted";
+//           } else if (captain1Status === 3 || captain2Status === 3) {
+//             captainStatus = "One or both captains declined";
+//           }
+//         }
+
+//         // Return the event data along with teams and captain status
+//         return {
+//           ...event._doc, // Spread the event document details
+//           teams: teams, // Add teams to the event details
+//           captainStatus: captainStatus, // Add captain status to the event details
+//         };
 //       })
 //     );
-
-//     // Step 3: Group events by league_id
-//     const groupedEvents = eventsWithTeams.reduce((acc, event) => {
-//       const leagueId = event.league_id._id.toString(); // Ensure we use a string key
-//       if (!acc[leagueId]) {
-//         acc[leagueId] = {
-//           league: {
-//             _id: event.league_id._id,
-//             name: event.league_id.name,
-//             location: event.league_id.location,
-//             date: event.league_id.date,
-//             sport_id: event.league_id.sport_id,
-//             join_privacy: event.league_id.join_privacy,
-//             statistics_info: event.league_id.statistics_info,
-//             image: event.league_id.image,
-//           },
-//           events: [],
-//         };
-//       }
-//       acc[leagueId].events.push({
-//         _id: event._id,
-//         title: event.title,
-//         date: event.date,
-//         location: event.location,
-//         players_count: event.players_count,
-//         start_time: event.start_time,
-//         end_time: event.end_time,
-//         repeat_event: event.repeat_event,
-//         is_team_drafted: event.is_team_drafted,
-//         createdAt: event.createdAt,
-//         updatedAt: event.updatedAt,
-//         teams: event.teams,
-//         players: event.players,
-//       });
-//       return acc;
-//     }, {});
-
-//     // Convert the grouped events object to an array
-//     const groupedEventsArray = Object.values(groupedEvents);
 
 //     return apiResponse.onSuccess(
 //       res,
 //       "Events fetched successfully.",
 //       200,
 //       true,
-//       groupedEventsArray
+//       eventsWithTeamsAndCaptains
 //     );
 //   } catch (err) {
 //     console.log("err ", err);
@@ -251,7 +227,7 @@ let getUpcomingEvents = async (req, res) => {
     })
       .sort({ start_date: 1 })
       .populate({
-        path: "league_id", // Field to populate
+        path: "league_id",
         select:
           "name location date sport_id join_privacy statistics_info image",
       });
@@ -265,24 +241,57 @@ let getUpcomingEvents = async (req, res) => {
       );
     }
 
-    // Step 2: Fetch team details for events with is_team_drafted = true
-    let eventsWithTeams = await Promise.all(
+    // Step 2: Fetch team and captain details for each event
+    let eventsWithTeamsAndCaptains = await Promise.all(
       events.map(async (event) => {
-        if (event.is_team_drafted) {
-          // Fetch the teams associated with this event
-          let teams = await Team.find({ event_id: event._id });
+        // Step 2a: Fetch teams for the event
+        let teams = await Team.find({ event_id: event._id });
 
-          return {
-            ...event._doc, // Spread the event document details
-            teams: teams, // Add teams to the event details
-          };
-        } else {
-          // For events where is_team_drafted is false, return an empty teams array
-          return {
-            ...event._doc, // Spread the event document details
-            teams: [], // Set teams to an empty array
-          };
+        // Step 2b: Fetch players and captains for each team
+        let teamsWithPlayers = await Promise.all(
+          teams.map(async (team) => {
+            let players = await AttendEvent.find({
+              team_id: team._id,
+              selection_status: 2, // Only fetch accepted players
+            })
+              .populate("user_id", "full_name positions profile_picture")
+              .exec();
+
+            // Extract player user details and captain details
+            let playerDetails = players.map((player) => player.user_id);
+            let captain = players.find((player) => player.is_captain); // Find the captain
+
+            return {
+              team,
+              players: playerDetails,
+              captain: captain ? captain.user_id : null, // Add captain details if available
+            };
+          })
+        );
+
+        // Step 2c: Check captain status for the event
+        let captainStatus = "No captains selected";
+        const captains = await Captain.find({ event_id: event._id });
+
+        if (captains.length === 2) {
+          const captain1Status = captains[0].request_status;
+          const captain2Status = captains[1].request_status;
+
+          if (captain1Status === 1 || captain2Status === 1) {
+            captainStatus = "Captains selected but invitation pending";
+          } else if (captain1Status === 2 && captain2Status === 2) {
+            captainStatus = "Both captains accepted";
+          } else if (captain1Status === 3 || captain2Status === 3) {
+            captainStatus = "One or both captains declined";
+          }
         }
+
+        // Return the event data along with teams, players, and captain status
+        return {
+          ...event._doc, // Spread the event document details
+          teams: teamsWithPlayers, // Add teams with players to the event details
+          captainStatus: captainStatus, // Add captain status to the event details
+        };
       })
     );
 
@@ -291,7 +300,7 @@ let getUpcomingEvents = async (req, res) => {
       "Events fetched successfully.",
       200,
       true,
-      eventsWithTeams
+      eventsWithTeamsAndCaptains
     );
   } catch (err) {
     console.log("err ", err);
