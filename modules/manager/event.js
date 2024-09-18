@@ -362,15 +362,15 @@ let ChooseCaptain = async (req, res) => {
       await CaptainModel.create(captainData);
 
       const createNotificationData = {
-        user_id : x,
-        detailed_id : null,
+        user_id: x,
+        detailed_id: null,
         type: "became_captain", // 'became_captain'
-        title : "Became a captain",
-        message : "You Are Selected As Team Captain For "+event.name+".",
-        read_status : false,
-        sent_status : 1,
-        sent_date : new Date()
-      }
+        title: "Became a captain",
+        message: "You Are Selected As Team Captain For " + event.name + ".",
+        read_status: false,
+        sent_status: 1,
+        sent_date: new Date(),
+      };
 
       await NotificationModel.create(createNotificationData);
     }
@@ -793,10 +793,10 @@ let CreateTeam = async (body, req, res) => {
       );
     }
 
-    if (event.playes_count && player_id.length > event.playes_count) {
+    if (event.players_count && player_id.length > event.players_count) {
       return apiResponse.onError(
         res,
-        `You cannot select more than ${event.playes_count} players.`,
+        `You cannot select more than ${event.players_count} players.`,
         400,
         false
       );
@@ -1124,10 +1124,57 @@ let UpdateTeam = async (req, res) => {
   }
 };
 
+// let GetTeam = async (req, res) => {
+//   try {
+//     const { event_id } = req.params;
+
+//     if (!event_id || !mongoose.Types.ObjectId.isValid(event_id)) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Invalid event ID." });
+//     }
+
+//     // Fetch teams for the event
+//     const teams = await TeamModel.find({ event_id })
+//       .populate("captain_id") // Populate captain details (adjust the field to your users model)
+//       .lean(); // Use lean() to get plain JavaScript objects instead of Mongoose documents
+
+//     if (!teams || teams.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "No teams found for this event." });
+//     }
+
+//     // Fetch players for each team
+//     const teamDetails = await Promise.all(
+//       teams.map(async (team) => {
+//         const players = await EventAttandanceModel.find({
+//           event_id,
+//           team_id: team._id,
+//           selection_status: 2,
+//         })
+//           .populate("user_id") // Populate player details (adjust the field to your users model)
+//           .lean();
+
+//         return {
+//           ...team,
+//           players,
+//         };
+//       })
+//     );
+
+//     return res.status(200).json({ success: true, teams: teamDetails });
+//   } catch (err) {
+//     console.error(err);
+//     return res.status(500).json({ success: false, message: "Server error." });
+//   }
+// };
+
 let GetTeam = async (req, res) => {
   try {
     const { event_id } = req.params;
 
+    // Check if event_id is valid
     if (!event_id || !mongoose.Types.ObjectId.isValid(event_id)) {
       return res
         .status(400)
@@ -1136,8 +1183,11 @@ let GetTeam = async (req, res) => {
 
     // Fetch teams for the event
     const teams = await TeamModel.find({ event_id })
-      .populate("captain_id") // Populate captain details (adjust the field to your users model)
-      .lean(); // Use lean() to get plain JavaScript objects instead of Mongoose documents
+      .populate({
+        path: "captain_id",
+        select: "_id full_name profile_picture positions", // Select specific fields
+      })
+      .lean();
 
     if (!teams || teams.length === 0) {
       return res
@@ -1151,19 +1201,37 @@ let GetTeam = async (req, res) => {
         const players = await EventAttandanceModel.find({
           event_id,
           team_id: team._id,
-          selection_status: 2,
+          selection_status: 2, // Only accepted players
         })
-          .populate("user_id") // Populate player details (adjust the field to your users model)
+          .populate({
+            path: "user_id",
+            select: "_id full_name profile_picture positions", // Select specific fields
+          })
           .lean();
 
+        // Add the players array to the team object
         return {
           ...team,
-          players,
+          players: players.map((player) => player.user_id), // Map players to return only user details
         };
       })
     );
 
-    return res.status(200).json({ success: true, teams: teamDetails });
+    // Separate the two teams
+    // if (teamDetails.length !== 2) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "There should be exactly two teams for the event.",
+    //   });
+    // }
+
+    return res.status(200).json({
+      success: true,
+      teams: {
+        team1: teamDetails[0],
+        team2: teamDetails[1],
+      },
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ success: false, message: "Server error." });

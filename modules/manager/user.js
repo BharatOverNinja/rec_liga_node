@@ -74,7 +74,11 @@ let getCurrentUserDetails = async (req, res) => {
     }
 
     // Fetch notifications for the user
-    let notificationForCaptain = await Notification.find({ user_id: user._id, read_status: false, type: 'became_captain' });
+    let notificationForCaptain = await Notification.find({
+      user_id: user._id,
+      read_status: false,
+      type: "became_captain",
+    });
 
     // Convert the Mongoose document to a plain JavaScript object
     let userObject = user.toObject();
@@ -95,7 +99,6 @@ let getCurrentUserDetails = async (req, res) => {
     return apiResponse.onError(res, "An error occurred", 500);
   }
 };
-
 
 let updateUser = async (req, res) => {
   const {
