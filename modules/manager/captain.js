@@ -100,6 +100,20 @@ let ChangeRequestStatus = async (req, res) => {
     } else {
       result = " declined ";
     }
+
+    // Fetch notifications for the user
+    let notificationForCaptain = await Notification.findOne({
+      user_id: user_id,
+      detailed_id: event_id,
+      read_status: false,
+      type: "became_captain",
+    });
+
+    if(notificationForCaptain) {
+      notificationForCaptain.read_status = true
+      notificationForCaptain.updatedAt = new Date()
+      notificationForCaptain.save();
+    }
     return apiResponse.onSuccess(
       res,
       "Captainship" + result + "successfull.",

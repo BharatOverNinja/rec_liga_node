@@ -78,7 +78,7 @@ let getCurrentUserDetails = async (req, res) => {
       user_id: user._id,
       read_status: false,
       type: "became_captain",
-    });
+    }).sort({ createdAt: -1 });
 
     // Convert the Mongoose document to a plain JavaScript object
     let userObject = user.toObject();

@@ -243,7 +243,7 @@ let ChooseCaptain = async (req, res) => {
 
       const createNotificationData = {
         user_id: x,
-        detailed_id: null,
+        detailed_id: event_id,
         type: "became_captain", // 'became_captain'
         title: "Became a captain",
         message: "You Are Selected As Team Captain For " + event.name + ".",
@@ -708,9 +708,12 @@ let GetTeam = async (req, res) => {
           .populate("user_id") // Populate player details (adjust the field to your users model)
           .lean();
 
+        let captain = players.find((player) => player.is_captain); // Find the captain
+
         return {
-          ...team,
+          team: {...team},
           players,
+          captain: captain ? captain.user_id : null, // Add captain details if available
         };
       })
     );

@@ -5,7 +5,7 @@ const schemaDefinition = new Schema(
   {
     user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
     type: { type: String }, 
-    detailed_id: { type: mongoose.Schema.Types.ObjectId },
+    detailed_id: { type: mongoose.Schema.Types.ObjectId, default : null },
     title: { type: String },
     message: { type: String },
     read_status: { type: Boolean }, // 1: Unread, 2, Readed, 
