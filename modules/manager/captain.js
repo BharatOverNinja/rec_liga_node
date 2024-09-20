@@ -3,6 +3,7 @@
 let EventModel = require("../models/event"),
   EventAttandanceModel = require("../models/attend_event"),
   CaptainModel = require("../models/captain"),
+  Notification = require("../models/notification"),
   TeamModel = require("../models/team"),
   apiResponse = require("../helpers/apiResponse");
 const mongoose = require("mongoose");

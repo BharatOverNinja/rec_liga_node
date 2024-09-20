@@ -688,8 +688,8 @@ let GetTeam = async (req, res) => {
 
     // Fetch teams for the event
     const teams = await TeamModel.find({ event_id })
-      .populate("captain_id") // Populate captain details (adjust the field to your users model)
-      .lean(); // Use lean() to get plain JavaScript objects instead of Mongoose documents
+      .populate("captain_id", "full_name positions profile_picture")
+      .lean();
 
     if (!teams || teams.length === 0) {
       return res
@@ -705,15 +705,33 @@ let GetTeam = async (req, res) => {
           team_id: team._id,
           selection_status: 2,
         })
-          .populate("user_id") // Populate player details (adjust the field to your users model)
+          .populate("user_id", "full_name positions profile_picture")
           .lean();
 
-        let captain = players.find((player) => player.is_captain); // Find the captain
+        // Filter only the necessary player details
+        const filteredPlayers = players.map((player) => ({
+          _id: player.user_id._id,
+          full_name: player.user_id.full_name,
+          positions: player.user_id.positions,
+          profile_picture: player.user_id.profile_picture,
+        }));
+
+        // Find the captain from the players list
+        const captain = players.find((player) => player.is_captain);
 
         return {
-          team: {...team},
-          players,
-          captain: captain ? captain.user_id : null, // Add captain details if available
+          team: {
+            _id: team._id,
+            team_name: team.team_name,
+            shirt_color: team.shirt_color,
+            captain_id: team.captain_id,
+            event_id: team.event_id,
+            turn: team.turn,
+            createdAt: team.createdAt,
+            updatedAt: team.updatedAt,
+          },
+          players: filteredPlayers,
+          captain: captain ? captain.user_id : null, // Assign captain details from players if available
         };
       })
     );
@@ -724,6 +742,55 @@ let GetTeam = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error." });
   }
 };
+
+// let GetTeam = async (req, res) => {
+//   try {
+//     const { event_id } = req.params;
+
+//     if (!event_id || !mongoose.Types.ObjectId.isValid(event_id)) {
+//       return res
+//         .status(400)
+//         .json({ success: false, message: "Invalid event ID." });
+//     }
+
+//     // Fetch teams for the event
+//     const teams = await TeamModel.find({ event_id })
+//       .populate("captain_id", "full_name positions profile_picture")
+//       .lean();
+
+//     if (!teams || teams.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "No teams found for this event." });
+//     }
+
+//     // Fetch players for each team
+//     const teamDetails = await Promise.all(
+//       teams.map(async (team) => {
+//         const players = await EventAttandanceModel.find({
+//           event_id,
+//           team_id: team._id,
+//           selection_status: 2,
+//         })
+//           .populate("user_id", "full_name positions profile_picture")
+//           .lean();
+
+//         let captain = players.find((player) => player.is_captain);
+
+//         return {
+//           team: {...team},
+//           players,
+//           captain: captain ? captain.user_id : null,
+//         };
+//       })
+//     );
+
+//     return res.status(200).json({ success: true, teams: teamDetails });
+//   } catch (err) {
+//     console.error(err);
+//     return res.status(500).json({ success: false, message: "Server error." });
+//   }
+// };
 
 module.exports = {
   CreateEvent: CreateEvent,
