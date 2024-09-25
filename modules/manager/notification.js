@@ -129,7 +129,66 @@ let NotificationList = async (body, req, res) => {
   }
 };
 
+let ClearNotification = async (body, req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    // Validate event_id
+    if (!user_id || !mongoose.Types.ObjectId.isValid(user_id)) {
+      return apiResponse.onSuccess(
+        res,
+        "Please provide a valid user id.",
+        400,
+        false
+      );
+    }
+
+    //Delete all users notification
+    await NotificationModel.deleteMany({user_id : user_id})
+
+    return apiResponse.onSuccess(
+      res,
+      "Notification cleared successfully.",
+      200,
+      true
+    );
+  } catch (err) {
+    console.log("err ", err);
+  }
+};
+
+let ReadNotification = async (body, req, res) => {
+  try {
+    const { user_id } = req.params;
+    const { notification_id } = body;
+
+    // Validate event_id
+    if (!user_id || !mongoose.Types.ObjectId.isValid(user_id)) {
+      return apiResponse.onSuccess(
+        res,
+        "Please provide a valid user id.",
+        400,
+        false
+      );
+    }
+
+    // Update read notification status by notification id
+    await NotificationModel.updateOne({ _id: notification_id }, { read_status: true });
+
+    return apiResponse.onSuccess(
+      res,
+      "Notification readed successfully.",
+      200,
+      true
+    );
+  } catch (err) {
+    console.log("err ", err);
+  }
+};
+
 module.exports = {
   NotificationList,
   sendNotification,
+  ClearNotification,
+  ReadNotification
 };

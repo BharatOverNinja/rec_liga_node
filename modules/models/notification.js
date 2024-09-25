@@ -8,7 +8,7 @@ const schemaDefinition = new Schema(
     detailed_id: { type: mongoose.Schema.Types.ObjectId, default : null },
     title: { type: String },
     message: { type: String },
-    read_status: { type: Boolean }, // 1: Unread, 2, Readed, 
+    read_status: { type: Boolean, default : false }, // true, false
     sent_status: { type: Number }, // 1: pending, 2, sent, 3: Failed, 
     sent_date: { type: Date }
   },

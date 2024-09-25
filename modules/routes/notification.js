@@ -6,5 +6,7 @@ let express = require("express"),
 
 router.post("/send_notification", controller.sendNotification);
 router.get("/list/:user_id", controller.NotificationList);
+router.get("/clear/:user_id", controller.ClearNotification);
+router.post("/read_notification/:user_id", controller.ReadNotification);
 
 module.exports = router;

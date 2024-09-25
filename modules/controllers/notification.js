@@ -8,7 +8,17 @@ let NotificationList = (req, res, next) => {
   return notificationManager.NotificationList(req.body, req, res);
 };
 
+let ClearNotification = (req, res, next) => {
+  return notificationManager.ClearNotification(req.body, req, res);
+};
+
+let ReadNotification = (req, res, next) => {
+  return notificationManager.ReadNotification(req.body, req, res);
+};
+
 module.exports = {
   NotificationList,
   sendNotification,
+  ClearNotification,
+  ReadNotification
 };
