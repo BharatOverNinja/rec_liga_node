@@ -8,7 +8,7 @@ let SportsModel = require("../models/sports"),
   apiResponse = require("../helpers/apiResponse");
 
 let storeRegistrationData = async (req, res) => {
-  const { full_name, email, phone, role } = req.body;
+  const { full_name, email, phone, role, device_type, device_token } = req.body;
 
   try {
     let user = await User.findOne({ email });
@@ -25,6 +25,8 @@ let storeRegistrationData = async (req, res) => {
       email,
       phone,
       role,
+      device_type,
+      device_token,
     });
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET_KEY, {
@@ -110,6 +112,8 @@ let updateUser = async (req, res) => {
     city,
     sports,
     positions,
+    device_type,
+    device_token,
   } = req.body;
   const userId = req.params.userId;
 
@@ -140,6 +144,8 @@ let updateUser = async (req, res) => {
       city,
       sports,
       positions,
+      device_type,
+      device_token,
     };
 
     // Apply updates to user object

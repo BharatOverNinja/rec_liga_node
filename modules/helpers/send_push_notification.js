@@ -1,35 +1,49 @@
 let UserModel = require("../models/user");
 let NotificationModel = require("../models/notification");
 
-const sendFirebaseNotification = async (title, notification, image_path = '', type, detailed_id, obj_detail) => {
-  const { messaging } = require('../../app');
+const sendFirebaseNotification = async (
+  title,
+  notification,
+  image_path = "",
+  type,
+  detailed_id,
+  obj_detail
+) => {
+  const { messaging } = require("../../app");
 
   let activeUsersList = await UserModel.find({
     device_token: { $ne: null },
-    device_type: { $ne: null }
+    device_type: { $ne: null },
   }).lean();
 
-  activeUsersList = activeUsersList || []
+  activeUsersList = activeUsersList || [];
 
-  let device_tokens = activeUsersList?.map(user => user?.device_token)?.filter(device_token => device_token !== null && device_token !== undefined && device_token !== '');
+  let device_tokens = activeUsersList
+    ?.map((user) => user?.device_token)
+    ?.filter(
+      (device_token) =>
+        device_token !== null &&
+        device_token !== undefined &&
+        device_token !== ""
+    );
 
   let uniqueDeviceTokens = new Set(device_tokens);
 
   let uniqueDeviceTokensArray = Array.from(uniqueDeviceTokens);
-  console.log("uniqueDeviceTokensArray ", uniqueDeviceTokensArray)
+  console.log("uniqueDeviceTokensArray ", uniqueDeviceTokensArray);
 
-  if(uniqueDeviceTokensArray?.length > 0) {
+  if (uniqueDeviceTokensArray?.length > 0) {
     let message = {
-      "tokens": uniqueDeviceTokensArray,
-      "notification": {
-        "title": notification,
-        "body": title,
+      tokens: uniqueDeviceTokensArray,
+      notification: {
+        title: notification,
+        body: title,
       },
-      "data" : {
-        "detailed_id" : detailed_id ? JSON.stringify(detailed_id) : "",
-        "detail" : obj_detail ? JSON.stringify(obj_detail) : "",
-        "type" : type
-      }
+      data: {
+        detailed_id: detailed_id ? JSON.stringify(detailed_id) : "",
+        detail: obj_detail ? JSON.stringify(obj_detail) : "",
+        type: type,
+      },
     };
 
     // if(type) {
@@ -38,187 +52,235 @@ const sendFirebaseNotification = async (title, notification, image_path = '', ty
     // } else {
     //   delete message.data
     // }
-    
+
     if (image_path) {
       message.notification.image = image_path;
     }
 
     let sent_users = await UserModel.find({
-      device_token: { $in: uniqueDeviceTokensArray }
+      device_token: { $in: uniqueDeviceTokensArray },
     }).lean();
-  
-    for(let user of sent_users) {
+
+    for (let user of sent_users) {
       await NotificationModel.create({
-        user_id : user._id,  
-        type : type,
+        user_id: user._id,
+        type: type,
         detailed_id: detailed_id,
-        title : notification,
-        message : title,
-        read_status : false,
-        sent_status : 1,
-        sent_date : new Date()
+        title: notification,
+        message: title,
+        read_status: false,
+        sent_status: 1,
+        sent_date: new Date(),
       });
     }
 
-    messaging.sendEachForMulticast(message)
+    messaging
+      .sendEachForMulticast(message)
       .then((response) => {
         // Response is an object with results for each token
         response.responses.forEach((result, index) => {
           if (result.error) {
-            console.error(`Failed to send notification to token ${message.tokens[index]}:`, result.error);
+            console.error(
+              `Failed to send notification to token ${message.tokens[index]}:`,
+              result.error
+            );
           } else {
-            console.log(`Successfully sent notification to token ${message.tokens[index]}`);
+            console.log(
+              `Successfully sent notification to token ${message.tokens[index]}`
+            );
           }
         });
       })
       .catch((error) => {
-        console.error('Error sending notification:', error);
-      }); 
+        console.error("Error sending notification:", error);
+      });
   }
 };
 
-const sendFirebaseNotificationOnJoinReqest = async (title, notification, image_path = '', type, detailed_id, obj_detail, user_id = null) => {
-  const { messaging } = require('../../app');
+const sendFirebaseNotificationOnJoinReqest = async (
+  title,
+  notification,
+  image_path = "",
+  type,
+  detailed_id,
+  obj_detail,
+  user_id = null
+) => {
+  const { messaging } = require("../../app");
 
   let activeUsersList = await UserModel.find({
-    _id: type == 'league_request_process' ? user_id : obj_detail.organizer_id,
+    _id: type == "league_request_process" ? user_id : obj_detail.organizer_id,
     device_token: { $ne: null },
-    device_type: { $ne: null }
+    device_type: { $ne: null },
   }).lean();
 
-  activeUsersList = activeUsersList || []
-  let device_tokens = activeUsersList?.map(user => user?.device_token)?.filter(device_token => device_token !== null && device_token !== undefined && device_token !== '');
+  activeUsersList = activeUsersList || [];
+  let device_tokens = activeUsersList
+    ?.map((user) => user?.device_token)
+    ?.filter(
+      (device_token) =>
+        device_token !== null &&
+        device_token !== undefined &&
+        device_token !== ""
+    );
 
   let uniqueDeviceTokens = new Set(device_tokens);
 
   let uniqueDeviceTokensArray = Array.from(uniqueDeviceTokens);
-  console.log("uniqueDeviceTokensArray ", uniqueDeviceTokensArray)
+  console.log("uniqueDeviceTokensArray ", uniqueDeviceTokensArray);
 
-  if(uniqueDeviceTokensArray?.length > 0) {
+  if (uniqueDeviceTokensArray?.length > 0) {
     let message = {
-      "tokens": uniqueDeviceTokensArray,
-      "notification": {
-        "title": notification,
-        "body": title,
+      tokens: uniqueDeviceTokensArray,
+      notification: {
+        title: notification,
+        body: title,
       },
-      "data" : {
-        "detailed_id" : detailed_id ? JSON.stringify(detailed_id) : "",
-        "detail" : obj_detail ? JSON.stringify(obj_detail) : "",
-        "type" : type
-      }
+      data: {
+        detailed_id: detailed_id ? JSON.stringify(detailed_id) : "",
+        detail: obj_detail ? JSON.stringify(obj_detail) : "",
+        type: type,
+      },
     };
-    
+
     if (image_path) {
       message.notification.image = image_path;
     }
 
     let sent_users = await UserModel.find({
-      _id: type == 'league_request_process' ? user_id : obj_detail.organizer_id,
-      device_token: { $in: uniqueDeviceTokensArray }
+      _id: type == "league_request_process" ? user_id : obj_detail.organizer_id,
+      device_token: { $in: uniqueDeviceTokensArray },
     }).lean();
-  
-    for(let user of sent_users) {
+
+    for (let user of sent_users) {
       await NotificationModel.create({
-        user_id : user._id,  
-        type : type,
+        user_id: user._id,
+        type: type,
         detailed_id: detailed_id,
-        title : notification,
-        message : title,
-        read_status : false,
-        sent_status : 1,
-        sent_date : new Date()
+        title: notification,
+        message: title,
+        read_status: false,
+        sent_status: 1,
+        sent_date: new Date(),
       });
     }
 
-    messaging.sendEachForMulticast(message)
+    messaging
+      .sendEachForMulticast(message)
       .then((response) => {
         // Response is an object with results for each token
         response.responses.forEach((result, index) => {
           if (result.error) {
-            console.error(`Failed to send notification to token ${message.tokens[index]}:`, result.error);
+            console.error(
+              `Failed to send notification to token ${message.tokens[index]}:`,
+              result.error
+            );
           } else {
-            console.log(`Successfully sent notification to token ${message.tokens[index]}`);
+            console.log(
+              `Successfully sent notification to token ${message.tokens[index]}`
+            );
           }
         });
       })
       .catch((error) => {
-        console.error('Error sending notification:', error);
-      }); 
+        console.error("Error sending notification:", error);
+      });
   }
 };
 
-const sendFirebaseNotificationOnJoinTeam = async (title, notification, image_path = '', type, detailed_id, obj_detail, user_id = null) => {
-  const { messaging } = require('../../app');
+const sendFirebaseNotificationOnJoinTeam = async (
+  title,
+  notification,
+  image_path = "",
+  type,
+  detailed_id,
+  obj_detail,
+  user_id = null
+) => {
+  const { messaging } = require("../../app");
 
   let activeUsersList = await UserModel.find({
     _id: detailed_id,
     device_token: { $ne: null },
-    device_type: { $ne: null }
+    device_type: { $ne: null },
   }).lean();
 
-  activeUsersList = activeUsersList || []
-  let device_tokens = activeUsersList?.map(user => user?.device_token)?.filter(device_token => device_token !== null && device_token !== undefined && device_token !== '');
+  activeUsersList = activeUsersList || [];
+  let device_tokens = activeUsersList
+    ?.map((user) => user?.device_token)
+    ?.filter(
+      (device_token) =>
+        device_token !== null &&
+        device_token !== undefined &&
+        device_token !== ""
+    );
 
   let uniqueDeviceTokens = new Set(device_tokens);
 
   let uniqueDeviceTokensArray = Array.from(uniqueDeviceTokens);
-  console.log("uniqueDeviceTokensArray ", uniqueDeviceTokensArray)
+  console.log("uniqueDeviceTokensArray ", uniqueDeviceTokensArray);
 
-  if(uniqueDeviceTokensArray?.length > 0) {
+  if (uniqueDeviceTokensArray?.length > 0) {
     let message = {
-      "tokens": uniqueDeviceTokensArray,
-      "notification": {
-        "title": notification,
-        "body": title,
+      tokens: uniqueDeviceTokensArray,
+      notification: {
+        title: notification,
+        body: title,
       },
-      "data" : {
-        "detailed_id" : detailed_id ? JSON.stringify(detailed_id) : "",
-        "detail" : obj_detail ? JSON.stringify(obj_detail) : "",
-        "type" : type
-      }
+      data: {
+        detailed_id: detailed_id ? JSON.stringify(detailed_id) : "",
+        detail: obj_detail ? JSON.stringify(obj_detail) : "",
+        type: type,
+      },
     };
-    
+
     if (image_path) {
       message.notification.image = image_path;
     }
 
     let sent_users = await UserModel.find({
       _id: detailed_id,
-      device_token: { $in: uniqueDeviceTokensArray }
+      device_token: { $in: uniqueDeviceTokensArray },
     }).lean();
-  
-    for(let user of sent_users) {
+
+    for (let user of sent_users) {
       await NotificationModel.create({
-        user_id : user._id,  
-        type : type,
+        user_id: user._id,
+        type: type,
         detailed_id: detailed_id,
-        title : notification,
-        message : title,
-        read_status : false,
-        sent_status : 1,
-        sent_date : new Date()
+        title: notification,
+        message: title,
+        read_status: false,
+        sent_status: 1,
+        sent_date: new Date(),
       });
     }
 
-    messaging.sendEachForMulticast(message)
+    messaging
+      .sendEachForMulticast(message)
       .then((response) => {
         // Response is an object with results for each token
         response.responses.forEach((result, index) => {
           if (result.error) {
-            console.error(`Failed to send notification to token ${message.tokens[index]}:`, result.error);
+            console.error(
+              `Failed to send notification to token ${message.tokens[index]}:`,
+              result.error
+            );
           } else {
-            console.log(`Successfully sent notification to token ${message.tokens[index]}`);
+            console.log(
+              `Successfully sent notification to token ${message.tokens[index]}`
+            );
           }
         });
       })
       .catch((error) => {
-        console.error('Error sending notification:', error);
-      }); 
+        console.error("Error sending notification:", error);
+      });
   }
 };
 
 module.exports = {
   sendFirebaseNotification,
   sendFirebaseNotificationOnJoinReqest,
-  sendFirebaseNotificationOnJoinTeam
+  sendFirebaseNotificationOnJoinTeam,
 };

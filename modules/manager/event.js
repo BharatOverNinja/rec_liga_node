@@ -8,7 +8,10 @@ let LeagueModel = require("../models/league"),
   TeamModel = require("../models/team"),
   UserModel = require("../models/user"),
   SportModel = require("../models/sports"),
-  { sendFirebaseNotification, sendFirebaseNotificationOnJoinTeam } = require("../helpers/send_push_notification"),
+  {
+    sendFirebaseNotification,
+    sendFirebaseNotificationOnJoinTeam,
+  } = require("../helpers/send_push_notification"),
   apiResponse = require("../helpers/apiResponse");
 const mongoose = require("mongoose");
 
@@ -88,7 +91,14 @@ let CreateEvent = async (req, res) => {
     let insertedEvent = await EventModel.create(createEventData);
 
     // send push notification
-    await sendFirebaseNotification(title, 'New event created', '', 'event', insertedEvent._id, insertedEvent)
+    await sendFirebaseNotification(
+      title,
+      "New event created",
+      "",
+      "event",
+      insertedEvent._id,
+      insertedEvent
+    );
 
     return apiResponse.onSuccess(res, "Event created successfully.", 200, true);
   } catch (err) {
@@ -445,7 +455,14 @@ let CreateTeam = async (body, req, res) => {
     }
 
     // Send notification on join league
-    await sendFirebaseNotificationOnJoinTeam(team_name, 'You have been choosen in '+team_name+' team.', '', 'selected_in_team', player_id[0], teams)
+    await sendFirebaseNotificationOnJoinTeam(
+      team_name,
+      "You have been choosen in " + team_name + " team.",
+      "",
+      "selected_in_team",
+      player_id[0],
+      teams
+    );
 
     return apiResponse.onSuccess(res, "Team created successfully.", 200, true);
   } catch (err) {
@@ -494,7 +511,14 @@ let EditEvent = async (req, res) => {
     await event.save();
 
     // Send notification on update event
-    await sendFirebaseNotification(event.title, event.title+' evnet updated.', '', 'event', event._id, event)
+    await sendFirebaseNotification(
+      event.title,
+      event.title + " evnet updated.",
+      "",
+      "event",
+      event._id,
+      event
+    );
 
     return apiResponse.onSuccess(
       res,
@@ -756,24 +780,20 @@ let GetTeam = async (req, res) => {
 // let GetTeam = async (req, res) => {
 //   try {
 //     const { event_id } = req.params;
-
 //     if (!event_id || !mongoose.Types.ObjectId.isValid(event_id)) {
 //       return res
 //         .status(400)
 //         .json({ success: false, message: "Invalid event ID." });
 //     }
-
 //     // Fetch teams for the event
 //     const teams = await TeamModel.find({ event_id })
 //       .populate("captain_id", "full_name positions profile_picture")
 //       .lean();
-
 //     if (!teams || teams.length === 0) {
 //       return res
 //         .status(404)
 //         .json({ success: false, message: "No teams found for this event." });
 //     }
-
 //     // Fetch players for each team
 //     const teamDetails = await Promise.all(
 //       teams.map(async (team) => {
@@ -784,9 +804,7 @@ let GetTeam = async (req, res) => {
 //         })
 //           .populate("user_id", "full_name positions profile_picture")
 //           .lean();
-
 //         let captain = players.find((player) => player.is_captain);
-
 //         return {
 //           team: {...team},
 //           players,
@@ -794,7 +812,6 @@ let GetTeam = async (req, res) => {
 //         };
 //       })
 //     );
-
 //     return res.status(200).json({ success: true, teams: teamDetails });
 //   } catch (err) {
 //     console.error(err);

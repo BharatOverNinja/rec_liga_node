@@ -15,7 +15,7 @@ const schemaDefinition = new Schema(
 
     isOnline: { type: Boolean, default: false },
 
-    socket_id: { type: String, default: "" },
+    socket_id: { type: String },
 
     role: { type: String, enum: ["Player", "League Organizer"] }, // league_organizer, player
 
