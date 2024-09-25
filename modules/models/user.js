@@ -45,7 +45,7 @@ const schemaDefinition = new Schema(
 
     player_rating: { type: Number, min: 0, max: 3, },
 
-    device_type: { type: String, default : null }, 
+    device_type: { type: String, enum: ["android", "ios"], default : null }, 
 
     device_token: { type: String, default : null },
 

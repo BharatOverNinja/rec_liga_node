@@ -66,5 +66,5 @@ server.listen(port, "0.0.0.0", function () {
 
 server.timeout = process.appConfig.global_config.server.networkCallTimeout;
 
-// const io = socketio(server, { pingTimeout: 60000 });
-// require('./modules/middleware/socket.js')(io);
+const io = socketio(server, { pingTimeout: 60000 });
+require('./modules/middleware/socket.js')(io);
