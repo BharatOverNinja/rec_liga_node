@@ -14,6 +14,7 @@ let express = require("express"),
   router = require("./modules/routes/index.js"),
   responseHandler = require("./modules/middleware/responseHandler"),
   bodyParser = require("body-parser");
+const admin = require("./modules/middleware/firebase_admin.js");
 
 console.log("Initializing Server.");
 console.log("Environment: " + process.env.NODE_ENV);
@@ -51,7 +52,9 @@ app.use(router);
 console.log("Plugging the error leaks.");
 app.use(responseHandler.onError);
 
-module.exports = app;
+const messaging = admin.messaging();
+
+module.exports = {app, messaging}
 
 console.log("Ready for requests.");
 let port = Number(

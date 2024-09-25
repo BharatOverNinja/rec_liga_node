@@ -4,6 +4,7 @@ let express = require("express"),
   router = express.Router(),
   multer = require("multer"),
   path = require("path"),
+  controllerone = require("../helpers/send_push_notification"),
   controller = require("../controllers/user");
 
 const storage = multer.diskStorage({
@@ -52,6 +53,8 @@ router.get(
 );
 
 router.get("/sports_list", controller.SportsList);
+
+router.get("/send_notification", controllerone.sendFirebaseNotification);
 
 router.delete("/delete_account/:userId", controller.deleteAccount);
 

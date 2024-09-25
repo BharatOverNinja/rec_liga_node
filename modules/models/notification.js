@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const schemaDefinition = new Schema(
   {
-    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'users', default : null },
     type: { type: String }, 
     detailed_id: { type: mongoose.Schema.Types.ObjectId, default : null },
     title: { type: String },

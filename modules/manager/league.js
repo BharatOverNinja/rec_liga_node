@@ -7,6 +7,7 @@ let LeagueModel = require("../models/league"),
   Event = require("../models/event.js"),
   PointTableModel = require("../models/point_table"),
   apiResponse = require("../helpers/apiResponse"),
+  { sendFirebaseNotificationOnJoinReqest } = require("..//helpers/send_push_notification"),
   mongoose = require("mongoose");
 
 let getLeagueSportsList = async (req, res) => {
@@ -671,6 +672,11 @@ let ProcessRequest = async (body, req, res) => {
     if (Number(status) == 3) {
       genmessage = " rejected ";
     }
+
+    const league = await LeagueModel.findById(league_id);
+
+    // Send notification on join league
+    await sendFirebaseNotificationOnJoinReqest(league.name, 'Your requeste has been  '+genmessage+' for '+league.name+' league.', '', 'league_request_process', league._id, league, player_id)
 
     return apiResponse.onSuccess(
       res,

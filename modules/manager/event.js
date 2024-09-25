@@ -8,6 +8,7 @@ let LeagueModel = require("../models/league"),
   TeamModel = require("../models/team"),
   UserModel = require("../models/user"),
   SportModel = require("../models/sports"),
+  { sendFirebaseNotification, sendFirebaseNotificationOnJoinTeam } = require("../helpers/send_push_notification"),
   apiResponse = require("../helpers/apiResponse");
 const mongoose = require("mongoose");
 
@@ -84,7 +85,10 @@ let CreateEvent = async (req, res) => {
       repeat_event,
     };
 
-    await EventModel.create(createEventData);
+    let insertedEvent = await EventModel.create(createEventData);
+
+    // send push notification
+    await sendFirebaseNotification(title, 'New event created', '', 'event', insertedEvent._id, insertedEvent)
 
     return apiResponse.onSuccess(res, "Event created successfully.", 200, true);
   } catch (err) {
@@ -440,6 +444,9 @@ let CreateTeam = async (body, req, res) => {
       }
     }
 
+    // Send notification on join league
+    await sendFirebaseNotificationOnJoinTeam(team_name, 'You have been choosen in '+team_name+' team.', '', 'selected_in_team', player_id[0], teams)
+
     return apiResponse.onSuccess(res, "Team created successfully.", 200, true);
   } catch (err) {
     console.error("Error: ", err);
@@ -485,6 +492,9 @@ let EditEvent = async (req, res) => {
     });
 
     await event.save();
+
+    // Send notification on update event
+    await sendFirebaseNotification(event.title, event.title+' evnet updated.', '', 'event', event._id, event)
 
     return apiResponse.onSuccess(
       res,

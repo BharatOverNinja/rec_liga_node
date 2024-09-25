@@ -6,6 +6,7 @@ let League = require("../models/league"),
   Team = require("../models/team"),
   LeaguePlayerModel = require("../models/league_player"),
   User = require("../models/user"),
+  { sendFirebaseNotificationOnJoinReqest } = require("..//helpers/send_push_notification"),
   apiResponse = require("../helpers/apiResponse");
 
 let getUpcomingEvents = async (req, res) => {
@@ -667,6 +668,9 @@ let joinLeague = async (req, res) => {
 
     // Save the new player document
     await newPlayer.save();
+
+    // Send notification on join league
+    await sendFirebaseNotificationOnJoinReqest(user.full_name, user.full_name+' has requested to join '+league.name+'.', '', 'league_join_request', league._id, league)
 
     return apiResponse.onSuccess(
       res,

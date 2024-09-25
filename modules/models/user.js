@@ -45,6 +45,10 @@ const schemaDefinition = new Schema(
 
     player_rating: { type: Number, min: 0, max: 3, },
 
+    device_type: { type: String, default : null }, 
+
+    device_token: { type: String, default : null },
+
     date: { type: Date, default: Date.now },
   },
   { versionKey: false, collection: "users", timestamps: true }
