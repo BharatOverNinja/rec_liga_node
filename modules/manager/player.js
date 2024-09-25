@@ -19,6 +19,8 @@ let getUpcomingEvents = async (req, res) => {
       status: 2, // Joined leagues
     }).select("league_id");
 
+    // console.log("==> Leagues Joined ==>", leaguePlayers);
+
     if (!leaguePlayers || leaguePlayers.length === 0) {
       return apiResponse.onSuccess(res, "No active leagues found!", 404, false);
     }
@@ -36,6 +38,8 @@ let getUpcomingEvents = async (req, res) => {
         select: "-__v",
       });
 
+    // console.log("==> Events List ==>", events);
+
     if (!events.length) {
       return apiResponse.onSuccess(
         res,
@@ -51,6 +55,8 @@ let getUpcomingEvents = async (req, res) => {
       event_id: { $in: events.map((event) => event._id) }, // Only consider upcoming events
       selection_status: { $in: [1, 2] },
     }).select("event_id selection_status team_id is_captain");
+
+    // console.log("==> Events Attending ==>", attendedEvents);
 
     // Create a map of attended event IDs, their statuses, and team details
     const attendedEventMap = {};
@@ -123,7 +129,7 @@ let getUpcomingEvents = async (req, res) => {
       formattedEvents
     );
   } catch (err) {
-    console.log("err ", err);
+    // console.log("err ", err);
     return apiResponse.onError(
       res,
       "An error occurred while fetching upcoming events.",
@@ -191,7 +197,7 @@ let getUpcomingEvents = async (req, res) => {
 //       filteredEvents
 //     );
 //   } catch (err) {
-//     console.log("err ", err);
+// console.log("err ", err);
 //     return apiResponse.onError(
 //       res,
 //       "An error occurred while fetching upcoming events.",
@@ -200,6 +206,7 @@ let getUpcomingEvents = async (req, res) => {
 //     );
 //   }
 // };
+
 // let getAttendingEvents = async (req, res) => {
 //   try {
 //     const userId = req.params.userId;
