@@ -820,10 +820,12 @@ let JoinedList = async (req, res) => {
           users: {
             $push: {
               _id: "$userDetails._id",
-              name: "$userDetails.name",
+              full_name: "$userDetails.full_name",
               email: "$userDetails.email",
               profile_picture: "$userDetails.profile_picture",
               role: "$userDetails.role",
+              device_type: "$userDetails.device_type",
+              device_token: "$userDetails.device_token",
               createdAt: "$userDetails.createdAt"
             },
           }, // Group user details into an array for each league
@@ -839,7 +841,6 @@ let JoinedList = async (req, res) => {
       {
         $project: {
           _id: 0, // Exclude _id from the final output
-          player_id: 1,
           leagues: 1, // Include the structured leagues with users
         },
       },
@@ -851,7 +852,7 @@ let JoinedList = async (req, res) => {
       "League list fetched successfully.",
       200,
       true,
-      leagues
+      { league: leagues.flatMap(x => x.leagues) }
     );
   } catch (err) {
     console.log("err ", err);
