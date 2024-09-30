@@ -783,27 +783,75 @@ let JoinedList = async (req, res) => {
         },
       },
       {
+        $unwind: "$league", // Unwind the league array to de-normalize the documents
+      },
+      {
+        $lookup: {
+          from: "league_players", // Lookup the users who joined each league from the LeaguePlayer collection
+          localField: "league._id", // The league ID in the "league" field
+          foreignField: "league_id", // Match against the league_id field in the LeaguePlayer collection
+          as: "joinedUsers", // Add the array of users who joined the league
+        },
+      },
+      {
+        $unwind: {
+          path: "$joinedUsers",
+          preserveNullAndEmptyArrays: true, // Include leagues without joined users
+        },
+      },
+      {
+        $lookup: {
+          from: "users", // Lookup from the "users" collection
+          localField: "joinedUsers.player_id", // Match against the player_id of users in the league
+          foreignField: "_id", // Field in the users collection to match against
+          as: "userDetails", // Name of the field to add to each joined user document
+        },
+      },
+      {
+        $unwind: {
+          path: "$userDetails",
+          preserveNullAndEmptyArrays: true, // Include leagues without joined user details
+        },
+      },
+      {
         $group: {
-          _id: "$player_id", // Group by player_id
-          player_id: { $first: "$player_id" }, // Preserve player_id
-          leagues: { $push: "$league" }, // Merge multiple league arrays into a single array
+          _id: "$league._id", // Group by league ID to structure each league separately
+          league: { $first: "$league" }, // Preserve league details
+          users: {
+            $push: {
+              _id: "$userDetails._id",
+              name: "$userDetails.name",
+              email: "$userDetails.email",
+              profile_picture: "$userDetails.profile_picture",
+              role: "$userDetails.role",
+              createdAt: "$userDetails.createdAt"
+            },
+          }, // Group user details into an array for each league
+        },
+      },
+      {
+        $group: {
+          _id: "$league._id", // Group by league ID to create a final structure with all leagues
+          player_id: { $first: "$league.player_id" },
+          leagues: { $push: { league: "$league", users: "$users" } },
         },
       },
       {
         $project: {
           _id: 0, // Exclude _id from the final output
           player_id: 1,
-          leagues: { $reduce: { input: "$leagues", initialValue: [], in: { $concatArrays: ["$$value", "$$this"] } } } // Flatten nested league arrays into a single array
+          leagues: 1, // Include the structured leagues with users
         },
-      }
+      },
     ]);
-
+    
+    
     return apiResponse.onSuccess(
       res,
-      "League list by player id fetched successfully.",
+      "League list fetched successfully.",
       200,
       true,
-      leagues[0] || []
+      leagues
     );
   } catch (err) {
     console.log("err ", err);
