@@ -824,8 +824,8 @@ let JoinedList = async (req, res) => {
               email: "$userDetails.email",
               profile_picture: "$userDetails.profile_picture",
               role: "$userDetails.role",
-              device_type: "$userDetails.device_type",
-              device_token: "$userDetails.device_token",
+              device_type: { $ifNull: ["$userDetails.device_type", null] }, // Set device_type to null if not available
+              device_token: { $ifNull: ["$userDetails.device_token", null] }, // Set device_token to null if not available
               createdAt: "$userDetails.createdAt"
             },
           }, // Group user details into an array for each league
@@ -846,13 +846,12 @@ let JoinedList = async (req, res) => {
       },
     ]);
     
-    
     return apiResponse.onSuccess(
       res,
       "League list fetched successfully.",
       200,
       true,
-      { league: leagues.flatMap(x => x.leagues) }
+      leagues.flatMap(x => x.leagues)
     );
   } catch (err) {
     console.log("err ", err);
