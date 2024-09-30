@@ -756,6 +756,66 @@ let PlayerDetail = async (req, res) => {
   }
 };
 
+let JoinedList = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    // Validate player_id
+    if (!user_id || !mongoose.Types.ObjectId.isValid(user_id)) {
+      return apiResponse.onSuccess(
+        res,
+        "Please provide a valid user id.",
+        400,
+        false
+      );
+    }
+
+    const leagues = await LeaguePlayerModel.aggregate([
+      {
+        $match: { player_id: new mongoose.Types.ObjectId(user_id), status: 2 }, // Match the player ID and status in the LeaguePlayer collection
+      },
+      {
+        $lookup: {
+          from: "leagues", // Lookup from the "leagues" collection
+          localField: "league_id", // Local field in the LeaguePlayer collection
+          foreignField: "_id", // Field in the leagues collection to match against
+          as: "league", // Name of the array field to add to each matching document
+        },
+      },
+      {
+        $group: {
+          _id: "$player_id", // Group by player_id
+          player_id: { $first: "$player_id" }, // Preserve player_id
+          leagues: { $push: "$league" }, // Merge multiple league arrays into a single array
+        },
+      },
+      {
+        $project: {
+          _id: 0, // Exclude _id from the final output
+          player_id: 1,
+          leagues: { $reduce: { input: "$leagues", initialValue: [], in: { $concatArrays: ["$$value", "$$this"] } } } // Flatten nested league arrays into a single array
+        },
+      }
+    ]);
+
+    return apiResponse.onSuccess(
+      res,
+      "League list by player id fetched successfully.",
+      200,
+      true,
+      leagues[0] || []
+    );
+  } catch (err) {
+    console.log("err ", err);
+    return apiResponse.onError(
+      res,
+      "An error occurred while fetching the player.",
+      500,
+      false
+    );
+  }
+};
+
 module.exports = {
   getLeagueSportsList,
   CreateLeague,
@@ -766,4 +826,5 @@ module.exports = {
   LeaguePlayersListByRating,
   ProcessRequest,
   PlayerDetail,
+  JoinedList
 };

@@ -35,6 +35,10 @@ let PlayerDetail = (req, res) => {
   return leagueManager.PlayerDetail(req, res);
 };
 
+let JoinedList = (req, res) => {
+  return leagueManager.JoinedList(req, res);
+};
+
 module.exports = {
   getLeagueSportsList,
   CreateLeague,
@@ -44,5 +48,6 @@ module.exports = {
   LeagueUpcomingEvents,
   LeaguePlayersListByRating,
   ProcessRequest,
+  JoinedList,
   PlayerDetail,
 };

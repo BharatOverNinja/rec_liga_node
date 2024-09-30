@@ -60,6 +60,8 @@ router.post("/process_request", controller.ProcessRequest);
 
 router.get("/player_detail", controller.PlayerDetail);
 
+router.get("/list/:user_id", controller.JoinedList);
+
 router.get(
   "/players_by_rating/:league_id",
   controller.LeaguePlayersListByRating
