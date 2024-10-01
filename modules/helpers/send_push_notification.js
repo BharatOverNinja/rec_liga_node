@@ -279,8 +279,55 @@ const sendFirebaseNotificationOnJoinTeam = async (
   }
 };
 
+const sendPushNotification = async ( title, message, device_token ) => {
+  const { messaging } = require("../../app");
+
+  let device_tokens = device_token?.filter(
+      (device_token) =>
+        device_token !== null &&
+        device_token !== undefined &&
+        device_token !== ""
+    );
+
+  let uniqueDeviceTokens = new Set(device_tokens);
+
+  let uniqueDeviceTokensArray = Array.from(uniqueDeviceTokens);
+
+  if (uniqueDeviceTokensArray?.length > 0) {
+    let messageObj = {
+      tokens: uniqueDeviceTokensArray,
+      notification: {
+        title: title,
+        body: message,
+      }
+    };
+
+    messaging
+      .sendEachForMulticast(messageObj)
+      .then((response) => {
+        // Response is an object with results for each token
+        response.responses.forEach((result, index) => {
+          if (result.error) {
+            console.error(
+              `Failed to send notification`,
+              result.error
+            );
+          } else {
+            console.log(
+              `Successfully sent notification`
+            );
+          }
+        });
+      })
+      .catch((error) => {
+        console.error("Error sending notification:", error);
+      });
+  }
+};
+
 module.exports = {
   sendFirebaseNotification,
   sendFirebaseNotificationOnJoinReqest,
   sendFirebaseNotificationOnJoinTeam,
+  sendPushNotification
 };

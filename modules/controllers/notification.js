@@ -16,9 +16,14 @@ let ReadNotification = (req, res, next) => {
   return notificationManager.ReadNotification(req.body, req, res);
 };
 
+let SendPush = (req, res, next) => {
+  return notificationManager.SendPush(req.body, req, res);
+};
+
 module.exports = {
   NotificationList,
   sendNotification,
   ClearNotification,
-  ReadNotification
+  ReadNotification,
+  SendPush
 };

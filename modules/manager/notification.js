@@ -3,6 +3,7 @@
 let NotificationModel = require("../models/notification"),
   apiResponse = require("../helpers/apiResponse"),
   mongoose = require("mongoose"),
+  { sendPushNotification } = require("../helpers/send_push_notification"),
   admin = require("../middleware/firebase_admin.js");
 
 const MAX_RETRIES = 3;
@@ -186,9 +187,54 @@ let ReadNotification = async (body, req, res) => {
   }
 };
 
+let SendPush = async (body, req, res) => {
+  try {
+    const { title, message, device_token } = body;
+
+    if(!title) {
+      return apiResponse.onSuccess(
+        res,
+        "Title is require.",
+        400,
+        false
+      );
+    }
+
+    if(!message) {
+      return apiResponse.onSuccess(
+        res,
+        "Message is require.",
+        400,
+        false
+      );
+    }
+
+    if(!device_token && device_token.length > 0) {
+      return apiResponse.onSuccess(
+        res,
+        "Device token is require.",
+        400,
+        false
+      );
+    }
+
+    await sendPushNotification(title, message, device_token)
+
+    return apiResponse.onSuccess(
+      res,
+      "Notification sent successfully.",
+      200,
+      true
+    );
+  } catch (err) {
+    console.log("err ", err);
+  }
+};
+
 module.exports = {
   NotificationList,
   sendNotification,
   ClearNotification,
-  ReadNotification
+  ReadNotification,
+  SendPush
 };
