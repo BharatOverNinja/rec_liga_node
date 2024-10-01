@@ -773,6 +773,8 @@ let JoinedList = async (req, res) => {
     let user = await UserModel.findOne({_id : user_id})
 
     if(user.role == 'League Organizer') {
+      const user = await UserModel.findOne({ _id: user_id })
+      .select('_id full_name email profile_picture role device_type device_token createdAt');
       const leagues = await LeagueModel.aggregate([
         {
           $match: { organizer_id: new mongoose.Types.ObjectId(user_id) }, // Match leagues based on the organizer_id field
@@ -831,12 +833,31 @@ let JoinedList = async (req, res) => {
           },
         },
       ]);
+      let filteredLeagues = leagues.map(league => {
+        if (
+          league.users.length === 1 &&
+          league.users[0]._id === null
+        ) {
+          // Replace users with an empty array
+          league.users = [];
+        }
+        return league;
+      });
+
+      filteredLeagues.forEach(item => {
+        if (item.league && item.league.userDetails) {
+          // Remove the userDetails key from the league object
+          delete item.league.userDetails;
+        }
+        item.users.push(user)
+      });
+
       return apiResponse.onSuccess(
         res,
         "League list fetched successfully.",
         200,
         true,
-        leagues
+        filteredLeagues
       );
     }
 
@@ -916,12 +937,19 @@ let JoinedList = async (req, res) => {
       },
     ]);
     
+    let responseData = leagues.flatMap(x => x.leagues)
+    for(let rdata of responseData) {
+      const user = await UserModel.findOne({ _id: rdata.league.organizer_id })
+      .select('_id full_name email profile_picture role device_type device_token createdAt');
+
+      rdata.users.push(user)
+    }
     return apiResponse.onSuccess(
       res,
       "League list fetched successfully.",
       200,
       true,
-      leagues.flatMap(x => x.leagues)
+      responseData
     );
   } catch (err) {
     console.log("err ", err);
