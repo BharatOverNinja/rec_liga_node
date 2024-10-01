@@ -770,6 +770,76 @@ let JoinedList = async (req, res) => {
       );
     }
 
+    let user = await UserModel.findOne({_id : user_id})
+
+    if(user.role == 'League Organizer') {
+      const leagues = await LeagueModel.aggregate([
+        {
+          $match: { organizer_id: new mongoose.Types.ObjectId(user_id) }, // Match leagues based on the organizer_id field
+        },
+        {
+          $lookup: {
+            from: "league_players", // Lookup from the "league_players" collection
+            localField: "_id", // Match "_id" from LeagueModel (league ID)
+            foreignField: "league_id", // Match against "league_id" in the "league_players" collection
+            as: "players", // Store matched league players in the "players" array
+          },
+        },
+        {
+          $unwind: {
+            path: "$players",
+            preserveNullAndEmptyArrays: true, // Include leagues with no players
+          },
+        },
+        {
+          $lookup: {
+            from: "users", // Lookup user details from the "users" collection
+            localField: "players.player_id", // Match "player_id" in "players"
+            foreignField: "_id", // Match against "_id" in "users"
+            as: "userDetails", // Store matched user details in "userDetails"
+          },
+        },
+        {
+          $unwind: {
+            path: "$userDetails",
+            preserveNullAndEmptyArrays: true, // Include players with no matching user details
+          },
+        },
+        {
+          $group: {
+            _id: "$_id", // Group by league ID
+            league: { $first: "$$ROOT" }, // Preserve league details
+            users: {
+              $push: {
+                _id: { $ifNull: ["$userDetails._id", null] }, 
+                full_name: { $ifNull: ["$userDetails.full_name", null] },
+                email: { $ifNull: ["$userDetails.email", null] },
+                profile_picture: { $ifNull: ["$userDetails.profile_picture", null] },
+                role: { $ifNull: ["$userDetails.role", null] },
+                device_type: { $ifNull: ["$userDetails.device_type", null] }, // Set device_type to null if not available
+                device_token: { $ifNull: ["$userDetails.device_token", null] }, // Set device_token to null if not available
+                createdAt: { $ifNull: ["$userDetails.createdAt", null] }
+              },
+            }, // Group user details into an array for each league
+          },
+        },
+        {
+          $project: {
+            _id: 0, // Exclude _id from the final output
+            league: 1, // Include the league details
+            users: 1, // Include grouped user details
+          },
+        },
+      ]);
+      return apiResponse.onSuccess(
+        res,
+        "League list fetched successfully.",
+        200,
+        true,
+        leagues
+      );
+    }
+
     const leagues = await LeaguePlayerModel.aggregate([
       {
         $match: { player_id: new mongoose.Types.ObjectId(user_id), status: 2 }, // Match the player ID and status in the LeaguePlayer collection
@@ -819,14 +889,14 @@ let JoinedList = async (req, res) => {
           league: { $first: "$league" }, // Preserve league details
           users: {
             $push: {
-              _id: "$userDetails._id",
-              full_name: "$userDetails.full_name",
-              email: "$userDetails.email",
-              profile_picture: "$userDetails.profile_picture",
-              role: "$userDetails.role",
+              _id: { $ifNull: ["$userDetails._id", null] }, 
+              full_name: { $ifNull: ["$userDetails.full_name", null] },
+              email: { $ifNull: ["$userDetails.email", null] },
+              profile_picture: { $ifNull: ["$userDetails.profile_picture", null] },
+              role: { $ifNull: ["$userDetails.role", null] },
               device_type: { $ifNull: ["$userDetails.device_type", null] }, // Set device_type to null if not available
               device_token: { $ifNull: ["$userDetails.device_token", null] }, // Set device_token to null if not available
-              createdAt: "$userDetails.createdAt"
+              createdAt: { $ifNull: ["$userDetails.createdAt", null] }
             },
           }, // Group user details into an array for each league
         },
